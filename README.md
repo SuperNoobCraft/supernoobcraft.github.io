@@ -1,2 +1,2 @@
 # Jim Tze Lau (Hogan) (SuperNoobCraft)'s Personal CV
-supernoobcraft.github.io
+Check it out [Here](supernoobcraft.github.io)
