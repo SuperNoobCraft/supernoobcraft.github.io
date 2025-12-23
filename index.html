@@ -1,5 +1,148 @@
-<h1>Hello! I am SuperNoobCraft!</h1>
-<h2>Or, you might know me as Jim Tze Lau, or Hogan Jim</h2>
-<p>I will eventually properly make this website, but for now, check out the <a href="https://supernoobcraft.neocities.org/">website</a> my girlfriend made for me!</p>
-<p>It was my birthday gift, very neat, she did not know html/css at all but learnt that for months to make it for me.</p>
-<p>Anyways I should probably properly learn it and make this site a proper profile.</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tze Lau (Hogan) Jim - CV</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: #f4f4f4; color: #333; line-height: 1.6; }
+        .container { max-width: 900px; margin: 0 auto; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+        header { background: #2c3e50; color: white; padding: 40px 40px 20px; text-align: center; }
+        h1 { margin: 0; font-size: 2.5em; }
+        .contact { margin: 10px 0; font-size: 1.1em; }
+        .contact a { color: #3498db; text-decoration: none; }
+        section { padding: 30px 40px; border-bottom: 1px solid #eee; }
+        h2 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; margin-bottom: 20px; }
+        ul { list-style: none; padding: 0; }
+        li { margin-bottom: 12px; position: relative; padding-left: 25px; }
+        li:before { content: "▹"; color: #3498db; position: absolute; left: 0; font-weight: bold; }
+        .project { display: flex; margin-bottom: 20px; align-items: flex-start; }
+        .project-details { flex: 1; }
+        .project h3 { margin: 0 0 5px 0; }
+        .project-tech { font-size: 0.9em; color: #7f8c8d; margin-top: 5px; }
+        .project-links { width: 120px; text-align: right; }
+        .project-links a { display: inline-block; background: #3498db; color: white; padding: 8px 16px; text-decoration: none; border-radius: 5px; font-size: 0.9em; }
+        .download-btn { display: inline-block; background: #e74c3c; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+        @media print { .download-btn, .project-links a { display: none; } body { background: white; } }
+        @media (max-width: 768px) { .container { margin: 0; } section { padding: 20px; } .project { flex-direction: column; } .project-links { text-align: left; margin-top: 10px; width: auto; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header style="background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);">
+            <img src="profile.png" alt="Tze Lau Jim" style="width: 140px; height: 140px; border-radius: 50%; border: 5px solid white; margin-bottom: 20px; object-fit: cover;">
+            <h1 style="margin-top: 0;">JIM Tze Lau, Hogan</h1>
+            <p class="contact">
+                <a href="tel:+852-6601-1309">+852 6601 1309</a> | <a href="mailto:hoganjim@connect.hku.hk">hoganjim@connect.hku.hk</a> | <a href="mailto:jimtzelau@gmail.com">jimtzelau@gmail.com</a><br>
+                <a href="https://github.com/SuperNoobCraft">GitHub</a> | 
+                <a href="https://www.linkedin.com/in/tze-lau-jim-5b90a8355/">LinkedIn</a>
+            </p>
+        </header>
+
+        <section id="summary">
+            <h2>Professional Summary</h2>
+            <p>BA(HDT) student at The University of Hong Kong with a second major in Computer Science. Passionate about all things video game related, as well as web design and programming. Seeking internship opportunities to apply academic knowledge in real-world projects.</p>
+        </section>
+
+        <section id="education">
+            <h2>Education</h2>
+            <ul>
+                <li>
+                    <strong>BA(HDT) - Humanities & Digital Technologies<br>Second Major: Computer Science</strong><br>
+                    The University of Hong Kong | Sep 2024 – Aug 2028 (Expected)<br>
+                    cGPA: 3.67 (Year 1 Sem 2)<br>
+                    <em>Relevant Coursework: COMP1117 Computer Programming, COMP2113 Programming Technologies, COMP2120 Computer Organization, COMP2121 Discrete Mathematics, HUDT2205 XR in the Humanities, HUDT2100 Emerging Trends in Digital Practices, STAT1016 Data Science 101</em>
+                </li>
+            </ul>
+        </section>
+        
+
+<section id="projects">
+    <h2>Projects</h2>
+    <div class="project">
+        <div style="width: 80px; height: 80px; margin-right: 20px; flex-shrink: 0;">
+            <img src="nyxia-thumb.png" alt="Nyxia" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+        </div>
+        <div class="project-details">
+            <h3>Nyxia (Core Member: Lead Programmer, Game Mechanics Designer)</h3>
+            <p>Current | HKU ATL GameMakers Group (HAGG) | Programming core mechanics for team project led by Christy Wong.</p>
+            <p class="project-tech">C# | Unity | Game Development | HKU ATL</p>
+        </div>
+        <div class="project-links">
+            <a href="https://www.atlab.hku.hk/lab-use-and-policies/atl-student-cohort-group/gamemakers-group/" target="_blank">HAGG</a>
+        </div>
+    </div>
+    <div class="project">
+        <div style="width: 80px; height: 80px; margin-right: 20px; flex-shrink: 0;">
+            <img src="wordle-thumb.png" alt="Wordle" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+        </div>
+        <div class="project-details">
+            <h3>Wordle Clone</h3>
+            <p>Sep-Nov 2025 | HKU | 6 modes (Standard/4-letter/Hard/Infinite/Multiplayer/Quordle), leaderboard, quit commands.</p>
+            <p class="project-tech">C++ |  Game Design | Project Management</p>
+        </div>
+        <div class="project-links">
+            <a href="https://www.youtube.com/watch?v=g0ANt6j9q2A" target="_blank">Demo</a>
+        </div>
+    </div>
+    <div class="project">
+        <div style="width: 80px; height: 80px; margin-right: 20px; flex-shrink: 0;">
+            <img src="vr-thumb.png" alt="VR" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+        </div>
+        <div class="project-details">
+            <h3>Behind Bars: Victoria Prison VR</h3>
+            <p>Feb-May 2025 | HKU | Unreal Engine recreation of Tai Kwun's B Hall for digital humanities.</p>
+            <p class="project-tech">Unreal Engine | Twinmotion | SketchUp | Game Design</p>
+        </div>
+        <div class="project-links">
+            <a href="https://www.youtube.com/watch?v=spF1-0IPyLM" target="_blank">Demo</a>
+        </div>
+    </div>
+    <div class="project">
+        <div style="width: 80px; height: 80px; margin-right: 20px; flex-shrink: 0;">
+            <img src="vvm-thumb.png" alt="VVM" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+        </div>
+        <div class="project-details">
+            <h3>Warlike Mech (Metroidvania)</h3>
+            <p>Aug-Dec 2022 | Pui Ching Middle School | 2D action-platformer under JFK scheme.</p>
+            <p class="project-tech">GameMaker Studio | Game Design | Project Management</p>
+        </div>
+        <div class="project-links">
+            <a href="https://grain-studios.itch.io/warlike-mech" target="_blank">Play</a>
+        </div>
+    </div>
+</section>
+    
+        <section id="skills">
+            <h2>Skills, Languages & Interests</h2>
+            <ul>
+                <li><strong>Skills:</strong> Programming (Pascal, C++, Python), Unity, Unreal Engine, Twinmotion</li>
+                <li><strong>Languages:</strong> Cantonese (Native), English (IELTS 8.5), Mandarin (Proficient)</li>
+                <li><strong>Interests:</strong> Video Game Design, Programming, History, Philosophy</li>
+            </ul>
+        </section>
+
+        <section id="awards">
+            <h2>Awards & Honors</h2>
+            <ul>
+                <li><strong>La Salle - Pui Ching Programming Challenge</strong><br>Elite Award, La Salle College (Aug 2023)</li>
+                <li><strong>Bebras Computational Thinking Challenge</strong><br>Gold Award (Top 10%), Hong Kong (Apr 2019)</li>
+                <li><strong>Pascal Contest (University of Waterloo)</strong><br>Certificate of Distinction (Top 25%) (Apr 2019)</li>
+                <li><strong>Mr. Fong Ho Sing Scholarship</strong><br>Outstanding Math (Arts Classes), Pui Ching Middle School (Jul 2023)</li>
+                <li><strong>Mr. Wong Kai Ming Memorial Scholarship</strong><br>First in Class (x3), Pui Ching Middle School (2019, 2022, 2023)</li>
+            </ul>
+        </section>
+        
+        <section id="test-scores">
+            <h2>Test Scores</h2>
+            <ul>
+                <li><strong>IELTS</strong>: 8.5 (C2) | Listening 9.0, Reading 9.0, Writing 7.5, Speaking 7.5 (Aug 2023)</li>
+                <li><strong>HKDSE Best 5</strong>: 27 (Apr 2024) | English 5*, ICT 5*, Math M2 5</li>
+            </ul>
+        </section>
+
+
+        <a href="cv.pdf" class="download-btn" style="display: block; text-align: center; max-width: 200px; margin: 40px auto 20px;">Download PDF</a>
+    </div>
+</body>
+</html>
