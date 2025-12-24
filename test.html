@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>JIM Tze Lau - CV</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"
+    >
+
+    <style>
+        
+        :root {
+            --bg-page: #f3f4f6;
+            --bg-main: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --accent: #2563eb;
+            --accent-soft: #eff6ff;
+            --border: #e5e7eb;
+        }
+
+        [data-theme="dark"] {
+            --bg-page: #020617;
+            --bg-main: #020617;
+            --text-main: #e5e7eb;
+            --text-muted: #9ca3af;
+            --accent: #60a5fa;
+            --accent-soft: #1e293b;
+            --border: #1f2937;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px 0;
+            background: var(--bg-page);
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: var(--text-main);
+            line-height: 1.5;
+            transform: scale(1.8);
+            transform-origin: center 0;
+            -moz-transform: scale(1.8); 
+            -moz-transform-origin: center 0;
+        }
+
+        /* THEME TOGGLE BUTTON (web only, hidden on print) */
+        .theme-toggle {
+            position: fixed;
+            top: 14px;
+            right: 18px;
+            z-index: 9999;
+            padding: 6px 12px;
+            font-size: 11px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: var(--bg-main);
+            color: var(--text-main);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        /* A4 PAGE CONTAINER */
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            background: var(--bg-main);
+            box-shadow: 0 0 20px rgba(0,0,0,0.12);
+            display: grid;
+            grid-template-columns: 2.1fr 1fr;
+            grid-template-rows: auto 1fr;
+        }
+
+        /* HEADER */
+        .header {
+            grid-column: 1 / 3;
+            display: grid;
+            grid-template-columns: 2.1fr 1fr;
+            padding: 22px 28px 16px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .header-main {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .name {
+            font-size: 30px;
+            letter-spacing: 0.04em;
+            font-weight: 600;
+            margin: 0 0 2px;
+        }
+
+        .title {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+
+        .contact-row {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 18px;
+            align-items: center;
+        }
+
+        .contact-row a {
+            color: var(--text-muted);
+            text-decoration: none;
+        }
+
+        .contact-row a:hover {
+            color: var(--accent);
+        }
+
+        .header-photo {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .photo-wrap {
+            width: 120px;
+            height: 120px;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .photo-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* COLUMNS */
+        .left-col {
+            padding: 14px 28px 24px;
+            border-right: 1px solid var(--border);
+        }
+
+        .right-col {
+            padding: 14px 22px 24px;
+        }
+
+        /* SECTIONS */
+        h2.section-title {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.16em;
+            color: var(--accent);
+            margin: 10px 0 6px;
+        }
+
+        .section-rule {
+            height: 1px;
+            background: var(--border);
+            margin-bottom: 6px;
+        }
+
+        .section {
+            margin-bottom: 12px;
+            font-size: 11px;
+        }
+
+        /* SUMMARY TEXT */
+        .summary {
+            font-size: 11px;
+        }
+
+        /* ITEMS */
+        .item-title {
+            font-weight: 600;
+            font-size: 12px;
+            margin-bottom: 2px;
+        }
+
+        .item-subtitle {
+            font-size: 11px;
+            color: var(--text-main);
+        }
+
+        .item-meta {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .item-meta span::before {
+            content: "•";
+            margin: 0 4px;
+            color: var(--text-muted);
+        }
+
+        .item-meta span:first-child::before {
+            content: "";
+            margin: 0;
+        }
+
+        /* BULLETS */
+        ul.bullets {
+            list-style: disc;
+            padding-left: 14px;
+            margin: 2px 0 0;
+        }
+
+        ul.bullets li {
+            margin-bottom: 2px;
+        }
+
+        /* TAGS / SKILL PILLS */
+        .tag-row {
+            margin-top: 3px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .tag {
+            border-radius: 999px;
+            font-size: 9px;
+            padding: 2px 7px;
+            background: var(--accent-soft);
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .project-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 10px;
+            margin-left: 4px;
+        }
+
+        .project-link:hover {
+            text-decoration: underline;
+        }
+
+        /* KEY-VALUE ROWS (GPA, etc.) */
+        .kv-row {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .kv-label {
+            font-weight: 500;
+        }
+
+        .kv-value {
+            text-align: right;
+        }
+
+        /* STRENGTH PILLS */
+        .strength-pill {
+            display: inline-block;
+            padding: 2px 7px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            font-size: 9px;
+            margin: 2px 4px 2px 0;
+        }
+
+        /* LANGUAGES */
+        .lang-row {
+            margin-bottom: 4px;
+        }
+
+        .lang-name {
+            font-weight: 500;
+        }
+
+        .lang-level {
+            color: var(--text-muted);
+            font-size: 10px;
+        }
+
+        /* MOBILE */
+        @media (max-width: 900px) {
+            body {
+                padding: 0;
+            }
+
+            .page {
+                width: 100%;
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                grid-template-columns: 1fr;
+                row-gap: 12px;
+            }
+
+            .header-photo {
+                justify-content: flex-start;
+            }
+
+            .left-col {
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+        }
+        .contact-row i {
+            margin-right: 4px;
+            color: var(--accent);
+            font-size: 12px;
+        }
+
+        .contact-row a,
+        .contact-row span {
+            display: flex;
+            align-items: center;
+        }
+
+    </style>
+</head>
+<body>
+<button class="theme-toggle" type="button" onclick="toggleTheme()">🌙 Dark mode</button>
+
+<div class="page">
+    <header class="header">
+        <div class="header-main">
+            <h1 class="name">JIM TZE LAU, HOGAN</h1>
+            <div class="title">HKU BA(HDT) &amp; Computer Science Student</div>
+            <div class="contact-row">
+                <div class="contact-row">
+                    <a href="mailto:jimtzelau@gmail.com">
+                        <i class="fa-solid fa-envelope"></i>
+                        jimtzelau@gmail.com
+                    </a>
+                    <a href="mailto:hoganjim@connect.hku.hk">
+                        <i class="fa-solid fa-envelope"></i>
+                        hoganjim@connect.hku.hk
+                    </a>
+                    <a href="tel:+85266011309">
+                        <i class="fa-solid fa-phone"></i>
+                        +852 6601 1309
+                    </a>
+                    <span>
+                        <i class="fa-solid fa-location-dot"></i>
+                        Hong Kong
+                    </span>
+                    <a href="https://www.linkedin.com/in/jimtzelau/" target="_blank">
+                        <i class="fa-brands fa-linkedin"></i>
+                        https://linkedin.com/in/jimtzelau
+                    </a>
+                    <a href="https://github.com/SuperNoobCraft" target="_blank">
+                        <i class="fa-brands fa-github"></i>
+                        https://github.com/SuperNoobCraft
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="header-photo">
+            <div class="photo-wrap">
+                <img src="images/profile.png" alt="Profile photo of Jim Tze Lau">
+            </div>
+        </div>
+    </header>
+
+    <main class="left-col">
+        <section class="section">
+            <h2 class="section-title">SUMMARY</h2>
+            <div class="section-rule"></div>
+            <p class="summary">
+                Second-year <strong>BA(HDT)</strong> student at The University of Hong Kong with a second major in <strong>Computer Science</strong>.
+                Passionate about video game development, VR, and interactive media, with hands-on experience using C++, C#, Unity, and Unreal Engine.
+                Seeking internships to apply programming and game design skills in real-world projects.
+            </p>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">EXPERIENCE</h2>
+            <div class="section-rule">
+
+            </div>
+            <div style="margin-top: 8px;">
+                <div class="item-title">Student Helper – Arts Tech Lab (ATL)</div>
+                <div class="item-subtitle">The University of Hong Kong</div>
+                <div class="item-meta"><span>Jan 2026 – Mar 2026 (Confirmed)</span><span>Hong Kong</span></div>
+                <ul class="bullets">
+                    <li>Provide technical and logistical support for ATL events, workshops, and student game projects.</li>
+                </ul>
+                <div class="tag-row">
+                    <span class="tag">Technical Support</span><span class="tag">XR / Games</span>
+                    <a class="project-link" href="https://www.atlab.hku.hk/" target="_blank">Lab site</a>
+                </div>
+            </div>
+        </section>
+        <section class="section">
+            <h2 class="section-title">PROJECTS</h2>
+            <div class="section-rule"></div>
+
+            <div>
+                <div class="item-title">Nyxia – Lead Programmer &amp; Game Mechanics Designer</div>
+                <div class="item-subtitle">HKU ATL GameMakers Group (HAGG)</div>
+                <div class="item-meta"><span>Mar 2025 - Current</span><span>Hong Kong</span></div>
+                <ul class="bullets">
+                    <li>Design and implement core gameplay systems for a team-based game project led by Christy Wong.</li>
+                    <li>Collaborate with designers and artists to iterate quickly on mechanics and balancing.</li>
+                </ul>
+                <div class="tag-row">
+                    <span class="tag">C#</span><span class="tag">Unity</span><span class="tag">Gameplay Programming</span>
+                    <a class="project-link" href="https://www.atlab.hku.hk/lab-use-and-policies/atl-student-cohort-group/gamemakers-group/" target="_blank">HAGG</a>
+                </div>
+            </div>
+
+            <div style="margin-top: 8px;">
+                <div class="item-title">Wordle Clone (6 Modes)</div>
+                <div class="item-subtitle">Course Project, The University of Hong Kong</div>
+                <div class="item-meta"><span>Sept 2025 - Nov 2025</span><span>Hong Kong</span></div>
+                <ul class="bullets">
+                    <li>Built a Wordle-style game with Standard, 4-letter, Hard, Infinite, Multiplayer, and Quordle modes.</li>
+                    <li>Implemented leaderboard, command handling, and input validation using modular C++ code.</li>
+                </ul>
+                <div class="tag-row">
+                    <span class="tag">C++</span><span class="tag">Game Design</span><span class="tag">Data Structures</span>
+                    <a class="project-link" href="https://www.youtube.com/watch?v=g0ANt6j9q2A" target="_blank">Demo</a>
+                </div>
+            </div>
+
+            <div style="margin-top: 8px;">
+                <div class="item-title">Behind Bars: Victoria Prison VR</div>
+                <div class="item-subtitle">Digital Humanities Project, The University of Hong Kong</div>
+                <div class="item-meta"><span>Feb 2025 – May 2025</span><span>Hong Kong</span></div>
+                <ul class="bullets">
+                    <li>Recreated Tai Kwun's B Hall in Unreal Engine to support teaching and research in digital humanities.</li>
+                    <li>Worked with Twinmotion and SketchUp assets to produce an immersive VR environment.</li>
+                </ul>
+                <div class="tag-row">
+                    <span class="tag">Unreal Engine</span><span class="tag">Twinmotion</span><span class="tag">SketchUp</span>
+                    <a class="project-link" href="https://www.youtube.com/watch?v=spF1-0IPyLM" target="_blank">Demo</a>
+                </div>
+            </div>
+
+            <div style="margin-top: 8px;">
+                <div class="item-title">Warlike Mech (Metroidvania)</div>
+                <div class="item-subtitle">Pui Ching Middle School – JFK Scheme</div>
+                <div class="item-meta"><span>Aug 2022 – Dec 2022</span><span>Hong Kong</span></div>
+                <ul class="bullets">
+                    <li>Developed a 2D action-platformer in a small team, responsible for level logic and enemy behaviour.</li>
+                    <li>Delivered a playable demo on itch.io to showcase gameplay and narrative.</li>
+                </ul>
+                <div class="tag-row">
+                    <span class="tag">GameMaker Studio</span><span class="tag">Project Management</span>
+                    <a class="project-link" href="https://grain-studios.itch.io/warlike-mech" target="_blank">Play</a>
+                </div>
+            </div>
+
+
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">AWARDS</h2>
+            <div class="section-rule"></div>
+
+            <div>
+                <div class="item-title">La Salle – Pui Ching Programming Challenge</div>
+                <div class="item-meta"><span>Elite Award</span><span>Aug 2023</span></div>
+            </div>
+            <div>
+                <div class="item-title">Bebras Computational Thinking Challenge</div>
+                <div class="item-meta"><span>Gold Award (Top 10%)</span><span>Apr 2019</span></div>
+            </div>
+            <div>
+                <div class="item-title">Pascal Contest – University of Waterloo</div>
+                <div class="item-meta"><span>Certificate of Distinction (Top 25%)</span><span>Apr 2019</span></div>
+            </div>
+            <div>
+                <div class="item-title">Mr. Fong Ho Sing Scholarship</div>
+                <div class="item-meta"><span>Outstanding Mathematics (Arts Classes)</span><span>Jul 2023</span></div>
+            </div>
+            <div>
+                <div class="item-title">Mr. Wong Kai Ming Memorial Scholarship</div>
+                <div class="item-meta"><span>First in Class (2019, 2022, 2023)</span></div>
+            </div>
+        </section>
+    </main>
+
+    <aside class="right-col">
+        <section class="section">
+            <h2 class="section-title">EDUCATION</h2>
+            <div class="section-rule"></div>
+
+            <div style="margin-bottom: 8px;">
+                <div class="item-title">BA(HDT) – Humanities &amp; Digital Technologies</div>
+                <div class="item-subtitle">The University of Hong Kong</div>
+                <div class="item-meta">
+                    <span>Second Major: Computer Science (Philosophy focus)</span>
+                    <span>Sept 2024 – Aug 2028 (Expected)</span>
+                </div>
+                <div class="kv-row">
+                    <span class="kv-label">cGPA:</span>
+                    <span class="kv-value">3.67 / 4.3 (Year 1 Sem 2)</span>
+                </div>
+                <div style="margin-top: 3px; font-size: 10px; color: var(--text-muted);">
+                    Relevant Coursework: COMP1117 Computer Programming, COMP2113 Programming Technologies,
+                    COMP2121 Discrete Mathematics, HUDT2205 XR in the Humanities, STAT1016 Data Science 101.
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">TEST SCORES</h2>
+            <div class="section-rule"></div>
+
+            <div>
+                <div class="item-title">IELTS</div>
+                <div class="item-meta"><span>Overall 8.5 (C2)</span><span>Aug 2023</span></div>
+                <div style="font-size: 10px; color: var(--text-muted);">
+                    Listening 9.0 | Reading 9.0 | Writing 7.5 | Speaking 7.5
+                </div>
+            </div>
+
+            <div style="margin-top: 6px;">
+                <div class="item-title">HKDSE Best 5</div>
+                <div class="item-meta"><span>Score: 27</span><span>Apr 2024</span></div>
+                <div style="font-size: 10px; color: var(--text-muted);">
+                    English 5* | ICT 5* | Mathematics (Compulsory) 5 | M2 5 | Economics 5
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">STRENGTHS</h2>
+            <div class="section-rule"></div>
+            <div style="margin-bottom: 6px;">
+                <div style="font-size: 10px; font-weight: 500; margin-bottom: 2px;">Personal</div>
+                <span class="strength-pill">Hard-working</span>
+                <span class="strength-pill">Motivated</span>
+                <span class="strength-pill">Quick learner</span>
+                <span class="strength-pill">Team player</span>
+            </div>
+            <div>
+                <div style="font-size: 10px; font-weight: 500; margin: 3px 0 2px;">Technical</div>
+                <div class="tag-row">
+                    <span class="tag">C++</span>
+                    <span class="tag">C#</span>
+                    <span class="tag">Python</span>
+                    <span class="tag">Pascal</span>
+                    <span class="tag">Unity</span>
+                    <span class="tag">Unreal Engine</span>
+                    <span class="tag">Twinmotion</span>
+                    <span class="tag">GameMaker Studio</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">LANGUAGES</h2>
+            <div class="section-rule"></div>
+
+            <div class="lang-row">
+                <span class="lang-name">Cantonese</span>
+                <span class="lang-level">– Native</span>
+            </div>
+            <div class="lang-row">
+                <span class="lang-name">English</span>
+                <span class="lang-level">– Professional (IELTS 8.5)</span>
+            </div>
+            <div class="lang-row">
+                <span class="lang-name">Mandarin</span>
+                <span class="lang-level">– Proficient</span>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">INTERESTS</h2>
+            <div class="section-rule"></div>
+            <div style="font-size: 11px;">
+                Video game design, programming, digital humanities, history, and philosophy.
+            </div>
+        </section>
+    </aside>
+</div>
+
+<script>
+    const root = document.documentElement;
+    const toggleBtn = document.querySelector('.theme-toggle');
+
+    function setTheme(theme) {
+        root.setAttribute('data-theme', theme);
+        toggleBtn.textContent = theme === 'dark' ? '☀️ Light mode' : '🌙 Dark mode';
+    }
+
+    function toggleTheme() {
+        const current = root.getAttribute('data-theme') || 'light';
+        const next = current === 'light' ? 'dark' : 'light';
+        setTheme(next);
+        localStorage.setItem('cv-theme', next);
+    }
+
+    // load saved preference or default to light
+    const saved = localStorage.getItem('cv-theme') || 'light';
+    setTheme(saved);
+</script>
+</body>
+</html>
