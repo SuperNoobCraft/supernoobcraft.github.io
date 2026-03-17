@@ -201,14 +201,96 @@
             .right-col li span.label {
                 font-weight: 600;
             }
+            @page {
+                size: auto;
+                margin: 8mm;
+            }
+
             @media print {
+                /* Prevent effects that can trigger rasterized PDF output in some browsers. */
+                * {
+                    transform: none !important;
+                    filter: none !important;
+                    text-shadow: none !important;
+                    box-shadow: none !important;
+                    animation: none !important;
+                    transition: none !important;
+                }
+
+                /* Use local fonts for reliable PDF text extraction in Firefox. */
+                html,
+                body,
+                p,
+                li,
+                span,
+                a,
+                h1,
+                h2,
+                strong,
+                em {
+                    font-family: Arial, Helvetica, sans-serif !important;
+                    font-variant-ligatures: none !important;
+                    text-rendering: optimizeLegibility;
+                }
+
+                .project-tech {
+                    font-family: "Courier New", Courier, monospace !important;
+                }
+
+                html,
+                body {
+                    width: auto !important;
+                    height: auto !important;
+                    zoom: 1 !important;
+                }
+
                 body {
                     background: #ffffff;
+                    color: #111111;
+                    print-color-adjust: exact;
+                    -webkit-print-color-adjust: exact;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    font-size: 10.4pt;
                 }
                 .page {
-                    margin: 0;
-                    box-shadow: none;
-                    max-width: 100%;
+                    margin: 0 !important;
+                    box-shadow: none !important;
+                    max-width: none !important;
+                    width: 100% !important;
+                    padding: 3mm 4mm 4mm !important;
+                }
+                .header {
+                    display: flex !important;
+                    flex-direction: row !important;
+                    align-items: center !important;
+                    margin-bottom: 10px !important;
+                    padding-bottom: 8px !important;
+                }
+                .content {
+                    display: grid !important;
+                    grid-template-columns: 3fr 2fr !important;
+                    column-gap: 16px !important;
+                }
+                .profile-img {
+                    width: 86px !important;
+                    height: 86px !important;
+                    margin-right: 12px !important;
+                }
+                section {
+                    margin-bottom: 10px !important;
+                }
+                h2 {
+                    margin-bottom: 5px !important;
+                    font-size: 0.87rem !important;
+                }
+                p,
+                li {
+                    font-size: 0.78rem !important;
+                    line-height: 1.25 !important;
+                }
+                li {
+                    margin-bottom: 3px !important;
                 }
                 .theme-toggle {
                     display: none;
@@ -216,8 +298,15 @@
                 .no-print {
                     display: none !important;
                 }
+
+                /* Hide icon webfonts in print; nearby text keeps contact info readable. */
+                .fa-solid,
+                .fa-brands,
+                .fa-regular {
+                    display: none !important;
+                }
             }
-            @media (max-width: 768px) {
+            @media screen and (max-width: 768px) {
                 .page {
                     margin: 0;
                     box-shadow: none;
