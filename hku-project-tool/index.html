@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>HKU Course Project Documentation Tool</title>
+        <meta
+            name="description"
+            content="A browser-based HKU project summary tool with TXT and PDF export."
+        />
+        <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap"
+        />
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">HKU Academic Toolkit</p>
+                <h1>Course Project Documentation Tool</h1>
+            </div>
+            <nav class="top-links" aria-label="Secondary pages">
+                <a href="help.html">Help</a>
+                <a href="about.html">About</a>
+                <a href="privacy.html">Privacy</a>
+            </nav>
+        </header>
+
+        <main class="layout">
+            <section class="left-column" aria-label="Project controls">
+                <section class="card project-list-card" aria-labelledby="project-list-heading">
+                    <h2 id="project-list-heading">Project Collection</h2>
+                    <p class="hint">
+                        No Projects Yet. Click New Project to start. Drag cards to rearrange export order.
+                    </p>
+
+                    <div class="collection-actions">
+                        <button type="button" id="newProject" class="primary">New Project</button>
+                        <button type="button" id="saveWorkspace">Save Workspace</button>
+                        <button type="button" id="loadWorkspace">Load Workspace</button>
+                        <button type="button" id="exportTxt">Export TXT (All Projects)</button>
+                        <button type="button" id="exportPdf">Export PDF (All Projects)</button>
+                    </div>
+
+                    <p id="noProjectsState" class="empty-state">No Projects Yet. Click New Project.</p>
+                    <ul id="projectList" class="project-list" aria-label="Saved project list"></ul>
+                </section>
+
+                <section class="card form-card" aria-labelledby="form-heading">
+                    <h2 id="form-heading">Project Editor</h2>
+                    <p id="editorModeHint" class="hint">Create a new project or edit a selected one.</p>
+
+                    <form id="project-form" novalidate>
+                    <fieldset>
+                        <legend>Project Identity</legend>
+                        <div class="grid two">
+                            <label>
+                                Course code <span aria-hidden="true">*</span>
+                                <input id="courseCode" name="courseCode" required placeholder="COMP2119" />
+                                <small id="courseCodeHelp">Format: 4 letters + 4 digits.</small>
+                            </label>
+                            <label>
+                                Course name <span aria-hidden="true">*</span>
+                                <input id="courseName" name="courseName" required placeholder="Object-Oriented Programming and Java" />
+                            </label>
+                            <label>
+                                Semester <span aria-hidden="true">*</span>
+                                <select id="semester" name="semester" required>
+                                    <option value="">Select semester</option>
+                                    <option>2025-26 Semester 1</option>
+                                    <option>2025-26 Semester 2</option>
+                                    <option>2025-26 Summer</option>
+                                    <option>2026-27 Semester 1</option>
+                                    <option>2026-27 Semester 2</option>
+                                    <option>2026-27 Summer</option>
+                                </select>
+                            </label>
+                            <label>
+                                Project type <span aria-hidden="true">*</span>
+                                <select id="projectType" name="projectType" required>
+                                    <option value="">Select type</option>
+                                    <option>Individual Assignment</option>
+                                    <option>Group Project</option>
+                                    <option>Capstone</option>
+                                    <option>Lab Project</option>
+                                    <option>Research Project</option>
+                                </select>
+                            </label>
+                            <label class="full">
+                                Project title <span aria-hidden="true">*</span>
+                                <input id="projectTitle" name="projectTitle" required placeholder="Smart Study Planner" />
+                            </label>
+                        </div>
+                        <div class="inline-group">
+                            <label for="sampleCourse">Quick sample preset</label>
+                            <select id="sampleCourse" name="sampleCourse">
+                                <option value="">No preset</option>
+                                <option value="COMP2119">COMP2119 - Object-Oriented Programming and Java</option>
+                                <option value="COMP2396">COMP2396 - Object-Oriented Programming and Java</option>
+                                <option value="BSIM3003">BSIM3003 - Digital Business Strategy</option>
+                                <option value="LAWS2002">LAWS2002 - Legal Research and Writing</option>
+                            </select>
+                            <button type="button" id="applySample">Apply preset</button>
+                        </div>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>HKU Context</legend>
+                        <div class="grid two">
+                            <label>
+                                Faculty (inferred)
+                                <input id="faculty" name="faculty" readonly />
+                            </label>
+                            <label>
+                                Department (inferred)
+                                <input id="department" name="department" readonly />
+                            </label>
+                        </div>
+                        <p id="inferenceNote" class="hint"></p>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Contribution and Technical Details</legend>
+                        <div class="grid two">
+                            <label>
+                                Role in team <span aria-hidden="true">*</span>
+                                <input id="role" name="role" required placeholder="Backend Developer and Tester" />
+                            </label>
+                            <label>
+                                Team size
+                                <input id="teamSize" name="teamSize" type="number" min="1" max="50" placeholder="4" />
+                            </label>
+                            <label class="full">
+                                Responsibilities <span aria-hidden="true">*</span>
+                                <textarea id="responsibilities" name="responsibilities" required rows="4" placeholder="Implemented API integration and wrote unit tests..."></textarea>
+                            </label>
+                            <label class="full">
+                                Tools and tech stack <span aria-hidden="true">*</span>
+                                <input id="tools" name="tools" required placeholder="Java, Spring Boot, PostgreSQL, GitHub Actions" />
+                            </label>
+                            <label class="full">
+                                Methods used (optional)
+                                <textarea id="methods" name="methods" rows="3" placeholder="MVC architecture, agile sprint workflow, REST design principles"></textarea>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Project Narrative</legend>
+                        <div class="grid one">
+                            <label>
+                                Problem statement <span aria-hidden="true">*</span>
+                                <textarea id="problemStatement" name="problemStatement" required rows="4"></textarea>
+                            </label>
+                            <label>
+                                Objectives <span aria-hidden="true">*</span>
+                                <textarea id="objectives" name="objectives" required rows="4"></textarea>
+                            </label>
+                            <label>
+                                Deliverables <span aria-hidden="true">*</span>
+                                <textarea id="deliverables" name="deliverables" required rows="4"></textarea>
+                            </label>
+                            <label>
+                                Challenges faced (optional)
+                                <textarea id="challenges" name="challenges" rows="3"></textarea>
+                            </label>
+                            <label>
+                                Mitigation strategy (optional)
+                                <textarea id="mitigation" name="mitigation" rows="3"></textarea>
+                            </label>
+                            <label>
+                                Result summary <span aria-hidden="true">*</span>
+                                <textarea id="results" name="results" required rows="4"></textarea>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Reflection (Optional)</legend>
+                        <div class="grid one">
+                            <label>
+                                Lessons learned
+                                <textarea id="lessons" name="lessons" rows="3"></textarea>
+                            </label>
+                            <label>
+                                Future improvements
+                                <textarea id="futureImprovements" name="futureImprovements" rows="3"></textarea>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Evidence (Optional)</legend>
+                        <label>
+                            Upload screenshots or prototypes (images only)
+                            <input id="evidence" name="evidence" type="file" accept="image/*" multiple />
+                        </label>
+                        <small>Files are used only in your browser session and are not uploaded anywhere.</small>
+                        <ul id="evidenceList" class="file-list"></ul>
+                    </fieldset>
+
+                    <p id="errorSummary" class="error-summary" role="alert" aria-live="polite"></p>
+
+                    <div class="actions">
+                        <button type="button" id="saveProject" class="primary">Save or Update Project</button>
+                        <button type="button" id="cancelEdit">Cancel Edit</button>
+                        <button type="button" id="resetForm">Reset</button>
+                    </div>
+                </form>
+                </section>
+            </section>
+
+            <section class="card preview-card" aria-labelledby="preview-heading">
+                <h2 id="preview-heading">Live Summary Preview</h2>
+                <p id="printFitHint" class="hint">Select a project card to preview it here.</p>
+                <article id="preview" class="preview-document"></article>
+            </section>
+        </main>
+
+        <footer class="footer-note">
+            <a href="../index.html">Back to main site</a>
+        </footer>
+
+        <script src="script.js"></script>
+    </body>
+</html>
