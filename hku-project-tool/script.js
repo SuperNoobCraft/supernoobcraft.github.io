@@ -1,10 +1,44 @@
 const PREFIX_MAP = {
-    COMP: { faculty: "Engineering", department: "Computer Science" },
-    BSIM: { faculty: "Business and Economics", department: "Information Systems" },
-    LAWS: { faculty: "Law", department: "School of Law" },
-    ECON: { faculty: "Business and Economics", department: "Economics" },
-    ELEC: { faculty: "Engineering", department: "Electrical and Electronic Engineering" },
-    ENGG: { faculty: "Engineering", department: "Faculty-level course" }
+    // School of Computing & Data Science
+    COMP: { faculty: "School of Computing & Data Science", department: "Computer Science" },
+
+    // Business & Economics
+    ECON: { faculty: "Business & Economics Faculty", department: "Economics" },
+    FINA: { faculty: "Business & Economics Faculty", department: "Finance" },
+    ACCT: { faculty: "Business & Economics Faculty", department: "Accounting" },
+
+    // Engineering
+    ENGG: { faculty: "Engineering Faculty", department: "Engineering" },
+    MECH: { faculty: "Engineering Faculty", department: "Mechanical Engineering" },
+    CIVL: { faculty: "Engineering Faculty", department: "Civil Engineering" },
+
+    // Education & Information
+    BSIM: { faculty: "Education Faculty", department: "Information Management" },
+    EDUC: { faculty: "Education Faculty", department: "Education" },
+
+    // Law
+    LLAW: { faculty: "Law Faculty", department: "Law" },
+
+    // Social Sciences
+    PSYC: { faculty: "Social Sciences Faculty", department: "Psychology" },
+    SOCI: { faculty: "Social Sciences Faculty", department: "Sociology" },
+    POLI: { faculty: "Social Sciences Faculty", department: "Politics and Public Administration" },
+    SOWK: { faculty: "Social Sciences Faculty", department: "Social Work and Social Administration" },
+    GEOG: { faculty: "Social Sciences Faculty", department: "Geography" },
+
+    // Science
+    MATH: { faculty: "Science Faculty", department: "Mathematics" },
+    CHEM: { faculty: "Science Faculty", department: "Chemistry" },
+    PHYS: { faculty: "Science Faculty", department: "Physics" },
+    BIOL: { faculty: "Science Faculty", department: "Biological Sciences" },
+
+    // Arts
+    ENGL: { faculty: "Arts Faculty", department: "English" },
+    CHIN: { faculty: "Arts Faculty", department: "Chinese" },
+    HIST: { faculty: "Arts Faculty", department: "History" },
+    PHIL: { faculty: "Arts Faculty", department: "Philosophy" },
+    HUDT: { faculty: "Arts Faculty", department: "Humanities and Digital Technologies" },
+    CAES: { faculty: "Arts Faculty", department: "Centre for Applied English Studies" }
 };
 
 const REQUIRED_FIELDS = [
