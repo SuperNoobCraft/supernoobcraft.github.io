@@ -233,6 +233,9 @@ legend {
 }
 
 .status-message {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin: 0 1rem 0.75rem;
     min-height: 1.4rem;
     border: 1px solid transparent;
@@ -241,6 +244,37 @@ legend {
     background: transparent;
     color: transparent;
     font-size: 0.9rem;
+    gap: 0.5rem;
+}
+
+.status-message-text {
+    flex: 1;
+    display: block;
+}
+
+.status-message-close {
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 0 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    border-radius: 0;
+    transition: all 0.2s;
+    line-height: 1;
+    font-weight: 300;
+}
+
+.status-message-close:hover {
+    color: var(--text);
+}
+
+.status-message-close:active {
+    transform: scale(0.95);
 }
 
 .status-message.is-visible {
@@ -249,16 +283,42 @@ legend {
     border-color: color-mix(in srgb, var(--status-text) 35%, transparent);
 }
 
+.status-message.is-visible .status-message-close {
+    display: flex;
+    color: var(--status-text);
+}
+
+.status-message.is-visible .status-message-close:hover {
+    color: var(--strong);
+}
+
 .status-message.error {
     background: #ffecec;
     color: #8d2020;
     border-color: #e3a3a3;
 }
 
+.status-message.error .status-message-close {
+    display: flex;
+    color: #8d2020;
+}
+
+.status-message.error .status-message-close:hover {
+    color: #6b1a1a;
+}
+
 [data-theme="dark"] .status-message.error {
     background: #452024;
     color: #ffc7c7;
     border-color: #8c4a4d;
+}
+
+[data-theme="dark"] .status-message.error .status-message-close {
+    color: #ffc7c7;
+}
+
+[data-theme="dark"] .status-message.error .status-message-close:hover {
+    color: #ffe4e4;
 }
 
 .layout {
@@ -298,6 +358,11 @@ legend {
     font-size: 0.94rem;
 }
 
+.hint.warn {
+    color: var(--warn);
+    font-weight: 700;
+}
+
 .collection-actions {
     display: flex;
     flex-wrap: wrap;
@@ -335,6 +400,43 @@ legend {
     margin: 0;
     font-size: 0.82rem;
     color: var(--muted);
+}
+
+.mode-segment {
+    width: min(360px, 100%);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.mode-segment-btn {
+    border: 0;
+    border-radius: 0;
+    padding: 0.5rem 0.55rem;
+    background: var(--surface-soft);
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.mode-segment-btn + .mode-segment-btn {
+    border-left: 1px solid var(--line-strong);
+}
+
+.mode-segment-btn.is-active {
+    background: var(--button);
+    color: #ffffff;
+}
+
+.mode-segment-btn:hover {
+    background: var(--surface-soft-2);
+}
+
+.mode-segment-btn.is-active:hover {
+    background: var(--button-hover);
 }
 
 .inline-toggle {
@@ -452,7 +554,7 @@ legend {
     padding: 0.3rem;
     display: grid;
     gap: 0.25rem;
-    min-width: 92px;
+    min-width: 138px;
 }
 
 .item-menu-panel button {
@@ -464,6 +566,7 @@ legend {
     color: var(--text);
     text-align: left;
     font-size: 0.82rem;
+    white-space: nowrap;
 }
 
 .item-menu-panel button:hover {
@@ -530,6 +633,16 @@ select {
     padding: 0.55rem 0.65rem;
     background: var(--surface-soft-2);
     color: var(--text);
+}
+
+input.not-inferred {
+    border-color: color-mix(in srgb, var(--warn) 60%, var(--line-strong) 40%);
+    background: color-mix(in srgb, var(--warn) 8%, var(--surface-soft-2) 92%);
+}
+
+#undoDelete[aria-disabled="true"] {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 textarea {
@@ -642,6 +755,29 @@ button.primary:hover {
     color: var(--muted);
     line-height: 1.3;
     max-width: 220px;
+}
+
+.portfolio-header {
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+    padding: 0.75rem 0.8rem;
+    margin-bottom: 0.75rem;
+    background: var(--surface);
+}
+
+.portfolio-header-name {
+    margin: 0;
+    color: var(--strong);
+    font-size: 1.18rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.portfolio-header-meta {
+    margin: 0.3rem 0 0;
+    color: var(--muted);
+    font-size: 0.86rem;
+    line-height: 1.35;
 }
 
 .project-sheet {
@@ -869,6 +1005,22 @@ button.primary:hover {
     .summary-header {
         margin-bottom: 0.35rem;
         break-after: avoid;
+    }
+
+    .portfolio-header {
+        border: 1px solid #d8d8d8;
+        border-radius: 6px;
+        padding: 0.35rem 0.45rem;
+        margin: 0 0 3mm;
+        break-after: avoid;
+    }
+
+    .portfolio-header-name {
+        font-size: 12pt;
+    }
+
+    .portfolio-header-meta {
+        font-size: 8.6pt;
     }
 
     .project-sheet {

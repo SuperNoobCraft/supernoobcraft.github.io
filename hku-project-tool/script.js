@@ -13,8 +13,7 @@ const REQUIRED_FIELDS = [
     { id: "academicYear", label: "Academic year" },
     { id: "term", label: "Term" },
     { id: "projectType", label: "Project type" },
-    { id: "projectTitle", label: "Project title" },
-    { id: "tools", label: "Tools and tech stack" }
+    { id: "projectTitle", label: "Project title" }
 ];
 
 const JSON_START = "--- HKU_PROJECT_COLLECTION_JSON_START ---";
@@ -34,6 +33,7 @@ const noProjectsState = document.getElementById("noProjectsState");
 const editorModeHint = document.getElementById("editorModeHint");
 const editorCard = document.getElementById("editorCard");
 const importTxtInput = document.getElementById("importTxtInput");
+const undoDeleteBtn = document.getElementById("undoDelete");
 const teamFields = document.getElementById("teamFields");
 const splitPagesToggle = document.getElementById("splitPagesToggle");
 const sortProjectsSelect = document.getElementById("sortProjects");
@@ -41,6 +41,10 @@ const profileNameInput = document.getElementById("profileName");
 const profileEmailInput = document.getElementById("profileEmail");
 const profilePhoneInput = document.getElementById("profilePhone");
 const profileLinkInput = document.getElementById("profileLink");
+const profileDisplayModeInput = document.getElementById("profileDisplayMode");
+const profileDisplayToggle = document.getElementById("profileDisplayToggle");
+const profileModeEach = document.getElementById("profileModeEach");
+const profileModeTop = document.getElementById("profileModeTop");
 const autosaveHint = document.getElementById("autosaveHint");
 const statusMessage = document.getElementById("statusMessage");
 const themeToggle = document.getElementById("themeToggle");
@@ -52,16 +56,25 @@ let projects = [];
 let activeProjectId = "";
 let draggingProjectId = "";
 let editorOpen = false;
-let profile = { name: "", email: "", phone: "", link: "" };
+let profile = { name: "", email: "", phone: "", link: "", displayMode: "per-project" };
 let persistTimer = null;
+let projectAutoSaveTimer = null;
 let autosaveTicker = null;
 let sortMode = "manual";
 let lastSavedAt = 0;
+let lastDeletedProjectSnapshot = null;
 
 function showStatus(message, isError = false) {
-    statusMessage.textContent = message || "";
+    const messageText = document.getElementById("statusMessageText");
+    const closeBtn = document.getElementById("statusMessageClose");
+    if (messageText) {
+        messageText.textContent = message || "";
+    }
     statusMessage.classList.toggle("is-visible", Boolean(message));
     statusMessage.classList.toggle("error", Boolean(message) && isError);
+    if (closeBtn) {
+        closeBtn.style.display = Boolean(message) ? "flex" : "none";
+    }
 }
 
 function showError(message) {
@@ -80,6 +93,18 @@ function setSortMode(nextMode) {
     }
 }
 
+function syncProfileDisplayToggle() {
+    if (!profileDisplayModeInput || !profileModeEach || !profileModeTop) {
+        return;
+    }
+
+    const isTopOnce = profileDisplayModeInput.value === "top-once";
+    profileModeEach.classList.toggle("is-active", !isTopOnce);
+    profileModeEach.setAttribute("aria-pressed", !isTopOnce ? "true" : "false");
+    profileModeTop.classList.toggle("is-active", isTopOnce);
+    profileModeTop.setAttribute("aria-pressed", isTopOnce ? "true" : "false");
+}
+
 function termRank(termValue) {
     const normalized = (termValue || "").trim().toLowerCase();
     if (normalized === "sem 1") {
@@ -92,6 +117,22 @@ function termRank(termValue) {
         return 3;
     }
     return 99;
+}
+
+function closeEditorKeepSelection(announce = false) {
+    if (!editorOpen) {
+        return;
+    }
+
+    setEditorOpen(false);
+    activeProjectId = "";
+    clearError();
+    renderProjectList();
+    renderPreview();
+    if (announce) {
+        showStatus("Editor closed.");
+    }
+    schedulePersistSessionState();
 }
 
 function academicTimeKey(project) {
@@ -296,12 +337,18 @@ function inferFromCourseCode(codeRaw) {
     if (matched) {
         byId("faculty").value = matched.faculty;
         byId("department").value = matched.department;
+        byId("faculty").classList.remove("not-inferred");
+        byId("department").classList.remove("not-inferred");
+        inferenceNote.classList.remove("warn");
         inferenceNote.textContent = "HKU inference found from course prefix " + prefix + ".";
         return;
     }
 
     byId("faculty").value = "Not inferred";
     byId("department").value = "Not inferred";
+    byId("faculty").classList.add("not-inferred");
+    byId("department").classList.add("not-inferred");
+    inferenceNote.classList.add("warn");
     inferenceNote.textContent = prefix ? "No local mapping for prefix " + prefix + ". You can still continue." : "";
 }
 
@@ -407,8 +454,26 @@ function clearFormFields() {
     form.reset();
     byId("faculty").value = "";
     byId("department").value = "";
+    byId("faculty").classList.remove("not-inferred");
+    byId("department").classList.remove("not-inferred");
+    inferenceNote.classList.remove("warn");
     inferenceNote.textContent = "";
     evidenceList.innerHTML = "";
+}
+
+function renderUndoDeleteState() {
+    if (!undoDeleteBtn) {
+        return;
+    }
+
+    const hasUndo = Boolean(lastDeletedProjectSnapshot && lastDeletedProjectSnapshot.project);
+    undoDeleteBtn.classList.toggle("is-hidden", !hasUndo);
+    undoDeleteBtn.setAttribute("aria-disabled", hasUndo ? "false" : "true");
+}
+
+function clearUndoDeleteState() {
+    lastDeletedProjectSnapshot = null;
+    renderUndoDeleteState();
 }
 
 function collectProfile() {
@@ -416,7 +481,8 @@ function collectProfile() {
         name: (profileNameInput.value || "").trim(),
         email: (profileEmailInput.value || "").trim(),
         phone: (profilePhoneInput.value || "").trim(),
-        link: (profileLinkInput.value || "").trim()
+        link: (profileLinkInput.value || "").trim(),
+        displayMode: (profileDisplayModeInput && profileDisplayModeInput.value) || "per-project"
     };
 }
 
@@ -426,10 +492,18 @@ function setProfileFields(profileData) {
     profileEmailInput.value = safe.email || "";
     profilePhoneInput.value = safe.phone || "";
     profileLinkInput.value = safe.link || "";
+    if (profileDisplayModeInput) {
+        profileDisplayModeInput.value = safe.displayMode || "per-project";
+    }
+    syncProfileDisplayToggle();
     profile = collectProfile();
 }
 
-function profileHtml(profileData) {
+function profileHtml(profileData, projectIndex = 1) {
+    if (profileData.displayMode !== "per-project") {
+        return "";
+    }
+
     const parts = [];
     if (profileData.name) {
         parts.push("<strong>" + sanitize(profileData.name) + "</strong>");
@@ -449,6 +523,35 @@ function profileHtml(profileData) {
     }
 
     return "<aside class=\"profile-corner\">" + parts.join("<br>") + "</aside>";
+}
+
+function portfolioHeaderHtml(profileData) {
+    if (!profileData || profileData.displayMode !== "top-once") {
+        return "";
+    }
+
+    const lines = [];
+    if (profileData.name) {
+        lines.push("<p class=\"portfolio-header-name\">" + sanitize(profileData.name) + "</p>");
+    }
+
+    const details = [profileData.email, profileData.phone, profileData.link].filter(Boolean).map((item) => sanitize(item));
+    if (details.length) {
+        lines.push("<p class=\"portfolio-header-meta\">" + details.join(" | ") + "</p>");
+    }
+
+    if (!lines.length) {
+        return "";
+    }
+
+    return "<header class=\"portfolio-header\">" + lines.join("") + "</header>";
+}
+
+function buildPortfolioPreviewHtml(projectDataList) {
+    const list = projectDataList || [];
+    const header = portfolioHeaderHtml(profile);
+    const sheets = list.map((projectData, index) => buildProjectSheetHtml(projectData, index + 1)).join("");
+    return header + sheets;
 }
 
 function setEditorOpen(open, modeHint = "") {
@@ -536,12 +639,27 @@ function section(title, body, optional = false) {
     );
 }
 
-function textOrPlaceholder(text) {
-    return text ? sanitize(text).replaceAll("\n", "<br>") : "<em>Not provided</em>";
-}
-
 function hasText(text) {
     return Boolean((text || "").trim());
+}
+
+function formatMultiline(text) {
+    return sanitize(text).replaceAll("\n", "<br>");
+}
+
+function formatField(label, text) {
+    if (!hasText(text)) {
+        return "";
+    }
+    return sanitize(label) + ":<br>" + formatMultiline(text);
+}
+
+function sectionFromFields(title, fields, optional = true) {
+    const filled = fields.filter(Boolean);
+    if (!filled.length) {
+        return "";
+    }
+    return section(title, filled.join("<br><br>"), optional);
 }
 
 function estimateContentLength(data) {
@@ -575,67 +693,65 @@ function buildProjectSheetHtml(data, index) {
         .join(" | ");
 
     const blocks = [
-        section(
+        sectionFromFields(
             "HKU Context",
-            "Faculty: " + textOrPlaceholder(data.hkuContext.faculty) + "<br>Department: " + textOrPlaceholder(data.hkuContext.department)
+            [
+                formatField("Faculty", data.hkuContext.faculty),
+                formatField("Department", data.hkuContext.department)
+            ],
+            false
         ),
-        section(
+        sectionFromFields(
             "Project Overview",
-            "Problem statement:<br>" +
-                textOrPlaceholder(data.narrative.problemStatement) +
-                "<br><br>Objectives:<br>" +
-                textOrPlaceholder(data.narrative.objectives) +
-                "<br><br>Deliverables:<br>" +
-                textOrPlaceholder(data.narrative.deliverables)
-        ),
-        section(
-            "Personal Contribution",
-            "Role: " +
-                textOrPlaceholder(data.team.role) +
-                "<br>Team size: " +
-                textOrPlaceholder(data.team.teamSize) +
-                "<br><br>Responsibilities:<br>" +
-                textOrPlaceholder(data.contribution.responsibilities)
-        ),
-        section(
-            "Technical Implementation",
-            "Tools and stack: " +
-                textOrPlaceholder(data.technical.tools) +
-                "<br><br>Methods used:<br>" +
-                textOrPlaceholder(data.technical.methods),
+            [
+                formatField("Problem statement", data.narrative.problemStatement),
+                formatField("Objectives", data.narrative.objectives),
+                formatField("Deliverables", data.narrative.deliverables)
+            ],
             true
         ),
-        section(
+        sectionFromFields(
+            "Personal Contribution",
+            [
+                formatField("Role", data.team.role),
+                formatField("Team size", data.team.teamSize),
+                formatField("Responsibilities", data.contribution.responsibilities)
+            ],
+            true
+        ),
+        sectionFromFields(
+            "Technical Implementation",
+            [
+                formatField("Tools and stack", data.technical.tools),
+                formatField("Methods used", data.technical.methods)
+            ],
+            true
+        ),
+        sectionFromFields(
             "Challenges and Outcomes",
-            "Challenges faced:<br>" +
-                textOrPlaceholder(data.narrative.challenges) +
-                "<br><br>Mitigation:<br>" +
-                textOrPlaceholder(data.narrative.mitigation) +
-                "<br><br>Result summary:<br>" +
-                textOrPlaceholder(data.narrative.results),
+            [
+                formatField("Challenges faced", data.narrative.challenges),
+                formatField("Mitigation", data.narrative.mitigation),
+                formatField("Result summary", data.narrative.results)
+            ],
+            true
+        ),
+        sectionFromFields(
+            "Reflection",
+            [
+                formatField("Lessons learned", data.reflection.lessons),
+                formatField("Future improvements", data.reflection.futureImprovements)
+            ],
             true
         )
-    ];
-
-    if (hasText(data.reflection.lessons) || hasText(data.reflection.futureImprovements)) {
-        blocks.push(
-            section(
-                "Reflection",
-                "Lessons learned:<br>" +
-                    textOrPlaceholder(data.reflection.lessons) +
-                    "<br><br>Future improvements:<br>" +
-                    textOrPlaceholder(data.reflection.futureImprovements),
-                true
-            )
-        );
-    }
+    ].filter(Boolean);
 
     if (data.evidence.length) {
         blocks.push(section("Evidence", sanitize(data.evidence.join(", ")), true));
     }
 
     const likelyOnePage = estimateContentLength(data) <= 2600;
-    const profileCorner = profileHtml(profile);
+    const profileCorner = profileHtml(profile, index);
 
     return (
         "<article class=\"project-sheet" +
@@ -656,20 +772,20 @@ function renderPreview() {
     const selectedProject = projects.find((project) => project.id === activeProjectId);
 
     if (selectedProject) {
-        previewEl.innerHTML = buildProjectSheetHtml(selectedProject.data, 1);
+        previewEl.innerHTML = buildPortfolioPreviewHtml([selectedProject.data]);
         printFitHint.textContent = "Previewing selected project. PDF export includes all saved projects in list order.";
         return;
     }
 
     if (editorOpen) {
-        previewEl.innerHTML = buildProjectSheetHtml(collectData(), 1);
+        previewEl.innerHTML = buildPortfolioPreviewHtml([collectData()]);
         printFitHint.textContent = "Previewing current draft project. Save it to include in exports.";
         return;
     }
 
     if (projects.length) {
-        previewEl.innerHTML = buildProjectSheetHtml(projects[0].data, 1);
-        printFitHint.textContent = "Previewing first saved project. Click Edit from a project card to modify it.";
+        previewEl.innerHTML = buildPortfolioPreviewHtml(projects.map((project) => project.data));
+        printFitHint.textContent = "Showing all saved projects. Click a project card to edit that item.";
         return;
     }
 
@@ -688,7 +804,7 @@ function renderAllProjectsForPrint() {
     };
 
     previewEl.classList.toggle("split-pages", splitPagesToggle.checked);
-    previewEl.innerHTML = projects.map((project, index) => buildProjectSheetHtml(project.data, index + 1)).join("");
+    previewEl.innerHTML = buildPortfolioPreviewHtml(projects.map((project) => project.data));
     printFitHint.textContent = "Preparing multi-page print preview for " + projects.length + " project(s).";
     window.print();
     previewEl.innerHTML = snapshot.html;
@@ -888,6 +1004,51 @@ function schedulePersistSessionState() {
     }, 180);
 }
 
+function autosaveActiveProjectEdit() {
+    if (!editorOpen) {
+        return;
+    }
+
+    if (!activeProjectId) {
+        const draftData = collectData();
+        const shouldCreateDraft =
+            hasText(draftData.identity.courseCode) ||
+            hasText(draftData.identity.projectTitle) ||
+            hasText(draftData.identity.courseName);
+
+        if (!shouldCreateDraft) {
+            return;
+        }
+
+        const created = buildProjectRecord(draftData);
+        projects.push(created);
+        activeProjectId = created.id;
+        applySortMode(sortMode, false);
+        schedulePersistSessionState();
+        return;
+    }
+
+    const projectIndex = projects.findIndex((project) => project.id === activeProjectId);
+    if (projectIndex < 0) {
+        return;
+    }
+
+    projects[projectIndex] = buildProjectRecord(collectData(), activeProjectId);
+    renderProjectList();
+    renderPreview();
+    schedulePersistSessionState();
+}
+
+function scheduleAutosaveActiveProjectEdit() {
+    if (projectAutoSaveTimer) {
+        clearTimeout(projectAutoSaveTimer);
+    }
+
+    projectAutoSaveTimer = setTimeout(() => {
+        autosaveActiveProjectEdit();
+    }, 320);
+}
+
 function restoreSessionState() {
     const raw = localStorage.getItem(SESSION_STORAGE_KEY);
     if (!raw) {
@@ -1031,9 +1192,21 @@ function startNewProject() {
 function deleteProjectById(projectId) {
     const target = projects.find((project) => project.id === projectId);
     const label = target ? (target.data.identity.projectTitle || target.data.identity.courseCode || "this project") : "this project";
-    if (!window.confirm("Delete " + label + "? This cannot be undone.")) {
+    if (!window.confirm("Delete " + label + "?")) {
         return;
     }
+
+    const deleteIndex = projects.findIndex((project) => project.id === projectId);
+    if (deleteIndex < 0) {
+        return;
+    }
+
+    lastDeletedProjectSnapshot = {
+        project: projects[deleteIndex],
+        index: deleteIndex,
+        wasActive: activeProjectId === projectId
+    };
+    renderUndoDeleteState();
 
     projects = projects.filter((project) => project.id !== projectId);
     if (activeProjectId === projectId) {
@@ -1044,7 +1217,28 @@ function deleteProjectById(projectId) {
     renderProjectList();
     renderPreview();
     clearError();
-    showStatus("Project deleted from collection.");
+    showStatus("Project deleted from collection. You can undo this.");
+    schedulePersistSessionState();
+}
+
+function undoDeleteProject() {
+    if (!lastDeletedProjectSnapshot || !lastDeletedProjectSnapshot.project) {
+        return;
+    }
+
+    const insertAt = Math.max(0, Math.min(lastDeletedProjectSnapshot.index, projects.length));
+    projects.splice(insertAt, 0, lastDeletedProjectSnapshot.project);
+
+    if (lastDeletedProjectSnapshot.wasActive) {
+        activeProjectId = lastDeletedProjectSnapshot.project.id;
+        setFormData(lastDeletedProjectSnapshot.project.data);
+        setEditorOpen(true, "Editing restored project.");
+    }
+
+    clearUndoDeleteState();
+    renderProjectList();
+    renderPreview();
+    showStatus("Delete undone.");
     schedulePersistSessionState();
 }
 
@@ -1090,6 +1284,7 @@ byId("courseCode").addEventListener("input", (event) => {
     inferFromCourseCode(event.target.value);
     if (editorOpen) {
         renderPreview();
+        scheduleAutosaveActiveProjectEdit();
     }
     schedulePersistSessionState();
 });
@@ -1098,6 +1293,7 @@ byId("projectType").addEventListener("change", () => {
     updateTeamFieldVisibility();
     if (editorOpen) {
         renderPreview();
+        scheduleAutosaveActiveProjectEdit();
     }
     schedulePersistSessionState();
 });
@@ -1105,6 +1301,7 @@ byId("projectType").addEventListener("change", () => {
 form.addEventListener("input", () => {
     if (editorOpen) {
         renderPreview();
+        scheduleAutosaveActiveProjectEdit();
     }
     schedulePersistSessionState();
 });
@@ -1113,6 +1310,7 @@ evidenceInput.addEventListener("change", () => {
     listEvidenceNames();
     if (editorOpen) {
         renderPreview();
+        scheduleAutosaveActiveProjectEdit();
     }
     schedulePersistSessionState();
 });
@@ -1120,6 +1318,9 @@ evidenceInput.addEventListener("change", () => {
 byId("newProject").addEventListener("click", startNewProject);
 byId("saveProject").addEventListener("click", saveOrUpdateProject);
 byId("cancelEdit").addEventListener("click", resetForm);
+if (undoDeleteBtn) {
+    undoDeleteBtn.addEventListener("click", undoDeleteProject);
+}
 byId("resetForm").addEventListener("click", () => {
     clearFormFields();
     if (editorOpen) {
@@ -1136,6 +1337,33 @@ byId("resetForm").addEventListener("click", () => {
         schedulePersistSessionState();
     });
 });
+
+if (profileDisplayToggle && profileDisplayModeInput) {
+    profileDisplayToggle.addEventListener("click", (event) => {
+        const modeButton = event.target.closest(".mode-segment-btn");
+        if (!modeButton) {
+            return;
+        }
+
+        const nextMode = modeButton.getAttribute("data-mode");
+        if (!nextMode || profileDisplayModeInput.value === nextMode) {
+            return;
+        }
+
+        profileDisplayModeInput.value = nextMode;
+        syncProfileDisplayToggle();
+        profile = collectProfile();
+        renderPreview();
+        schedulePersistSessionState();
+    });
+}
+
+const statusMessageClose = document.getElementById("statusMessageClose");
+if (statusMessageClose) {
+    statusMessageClose.addEventListener("click", () => {
+        showStatus("");
+    });
+}
 
 splitPagesToggle.addEventListener("change", schedulePersistSessionState);
 
@@ -1154,6 +1382,11 @@ byId("importProjects").addEventListener("click", () => {
 importTxtInput.addEventListener("change", () => {
     const file = importTxtInput.files && importTxtInput.files[0];
     if (!file) {
+        return;
+    }
+
+    if (projects.length && !window.confirm("This will overwrite your current projects. Continue?")) {
+        importTxtInput.value = "";
         return;
     }
 
@@ -1192,6 +1425,8 @@ importTxtInput.addEventListener("change", () => {
 });
 
 projectList.addEventListener("click", (event) => {
+    event.stopPropagation();
+
     const menuButton = event.target.closest("[data-action]");
     if (menuButton) {
         const item = menuButton.closest(".project-item");
@@ -1239,15 +1474,18 @@ projectList.addEventListener("click", (event) => {
         return;
     }
     const projectId = item.getAttribute("data-id");
-    activeProjectId = projectId;
-    renderProjectList();
-    renderPreview();
+    if (projectId === activeProjectId && editorOpen) {
+        closeEditorKeepSelection(true);
+        return;
+    }
+    selectProjectById(projectId);
     clearError();
-    showStatus("Selected project for preview.");
-    schedulePersistSessionState();
+    showStatus("Loaded project for editing.");
 });
 
 projectList.addEventListener("keydown", (event) => {
+    event.stopPropagation();
+
     const item = event.target.closest(".project-item");
     if (!item) {
         return;
@@ -1259,12 +1497,43 @@ projectList.addEventListener("keydown", (event) => {
 
     event.preventDefault();
     const projectId = item.getAttribute("data-id");
-    activeProjectId = projectId;
-    renderProjectList();
-    renderPreview();
+    if (projectId === activeProjectId && editorOpen) {
+        closeEditorKeepSelection(true);
+        return;
+    }
+    selectProjectById(projectId);
     clearError();
-    showStatus("Selected project for preview.");
-    schedulePersistSessionState();
+    showStatus("Loaded project for editing.");
+});
+
+document.addEventListener("click", (event) => {
+    if (!editorOpen) {
+        return;
+    }
+
+    if (event.target.closest("#editorCard")) {
+        return;
+    }
+
+    if (event.target.closest("#projectList")) {
+        return;
+    }
+
+    if (event.target.closest("#newProject")) {
+        return;
+    }
+
+    closeEditorKeepSelection(true);
+});
+
+document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") {
+        return;
+    }
+
+    document.querySelectorAll(".item-menu[open]").forEach((detailsEl) => {
+        detailsEl.removeAttribute("open");
+    });
 });
 
 projectList.addEventListener("dragstart", (event) => {
@@ -1309,6 +1578,17 @@ byId("exportTxt").addEventListener("click", () => {
         return;
     }
 
+    const hasNonTextEvidence = projects.some((project) => Array.isArray(project.data.evidence) && project.data.evidence.length);
+    if (hasNonTextEvidence) {
+        const proceed = window.confirm(
+            "TXT export includes text and evidence file names only. Uploaded images/files themselves are not included. Continue?"
+        );
+        if (!proceed) {
+            showStatus("TXT export canceled.");
+            return;
+        }
+    }
+
     const txtAll = toTxtAll(projects);
     download("hku-project-collection.txt", txtAll, "text/plain;charset=utf-8");
     clearError();
@@ -1340,6 +1620,7 @@ if (!projects.length && !editorOpen) {
     renderProjectList();
     renderPreview();
 }
+renderUndoDeleteState();
 startAutosaveTicker();
 setupWelcomeModal();
 updateHeaderOffset();

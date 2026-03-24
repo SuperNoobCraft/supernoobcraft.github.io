@@ -46,7 +46,12 @@
             </nav>
         </header>
 
-        <p id="statusMessage" class="status-message" role="status" aria-live="polite"></p>
+        <div id="statusMessage" class="status-message" role="status" aria-live="polite">
+            <span id="statusMessageText" class="status-message-text"></span>
+            <button id="statusMessageClose" class="status-message-close" aria-label="Close notification" style="display: none;">
+                ×
+            </button>
+        </div>
 
         <main class="layout" id="main-content">
             <section class="left-column" aria-label="Project controls">
@@ -75,6 +80,18 @@
                                 Contact link
                                 <input id="profileLink" name="profileLink" placeholder="linkedin.com/in/..." />
                             </label>
+                            <label class="full">
+                                Personal info display
+                                <div id="profileDisplayToggle" class="mode-segment" role="group" aria-label="Personal info display mode">
+                                    <button type="button" id="profileModeEach" class="mode-segment-btn is-active" data-mode="per-project" aria-pressed="true">
+                                        Each project
+                                    </button>
+                                    <button type="button" id="profileModeTop" class="mode-segment-btn" data-mode="top-once" aria-pressed="false">
+                                        Top only
+                                    </button>
+                                </div>
+                                <input id="profileDisplayMode" name="profileDisplayMode" type="hidden" value="per-project" />
+                            </label>
                         </div>
                     </fieldset>
 
@@ -83,6 +100,7 @@
                         <button type="button" id="importProjects">Import Projects (TXT)</button>
                         <button type="button" id="exportTxt">Export Projects (TXT)</button>
                         <button type="button" id="exportPdf">Export Portfolio (PDF)</button>
+                        <button type="button" id="undoDelete" class="is-hidden" aria-disabled="true">Undo Delete</button>
                         <input id="importTxtInput" type="file" accept=".txt,text/plain" hidden />
                     </div>
                     <div class="collection-meta-row">
@@ -210,8 +228,8 @@
                                 <textarea id="responsibilities" name="responsibilities" rows="4" placeholder="Implemented API integration and wrote unit tests..."></textarea>
                             </label>
                             <label class="full">
-                                Tools and tech stack <span aria-hidden="true">*</span>
-                                <input id="tools" name="tools" required placeholder="Java, Spring Boot, PostgreSQL, GitHub Actions" />
+                                Tools and tech stack (optional)
+                                <input id="tools" name="tools" placeholder="Java, Spring Boot, PostgreSQL, GitHub Actions" />
                             </label>
                             <label class="full">
                                 Methods used (optional)
