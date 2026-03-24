@@ -189,6 +189,7 @@ function applySortMode(mode, announce = true) {
     setSortMode(mode);
     if (!projects.length || sortMode === "manual") {
         renderProjectList();
+        renderPreview();
         return;
     }
 
