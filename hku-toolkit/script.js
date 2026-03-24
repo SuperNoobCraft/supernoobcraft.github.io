@@ -54,6 +54,10 @@ const JSON_START = "--- HKU_PROJECT_COLLECTION_JSON_START ---";
 const JSON_END = "--- HKU_PROJECT_COLLECTION_JSON_END ---";
 const SESSION_STORAGE_KEY = "hkuProjectToolSessionV1";
 const WELCOME_STORAGE_KEY = "hkuProjectToolWelcomeSeenV1";
+const EVIDENCE_DB_NAME = "hkuToolkitEvidenceV1";
+const EVIDENCE_DB_VERSION = 1;
+const EVIDENCE_STORE_NAME = "projectEvidence";
+const DRAFT_EVIDENCE_KEY = "__draft__";
 
 const form = document.getElementById("project-form");
 const previewEl = document.getElementById("preview");
@@ -66,8 +70,10 @@ const projectList = document.getElementById("projectList");
 const noProjectsState = document.getElementById("noProjectsState");
 const editorModeHint = document.getElementById("editorModeHint");
 const editorCard = document.getElementById("editorCard");
-const importTxtInput = document.getElementById("importTxtInput");
+const importZipInput = document.getElementById("importZipInput");
 const undoDeleteBtn = document.getElementById("undoDelete");
+const importBundleZipBtn = document.getElementById("importBundleZip");
+const exportBundleZipBtn = document.getElementById("exportBundleZip");
 const teamFields = document.getElementById("teamFields");
 const splitPagesToggle = document.getElementById("splitPagesToggle");
 const sortProjectsSelect = document.getElementById("sortProjects");
@@ -97,6 +103,10 @@ let autosaveTicker = null;
 let sortMode = "manual";
 let lastSavedAt = 0;
 let lastDeletedProjectSnapshot = null;
+const evidencePreviewUrlsByProjectId = new Map();
+let draftEvidencePreviewUrls = [];
+let evidenceDbPromise = null;
+let evidenceSelectionTouched = false;
 
 function showStatus(message, isError = false) {
     const messageText = document.getElementById("statusMessageText");
@@ -396,6 +406,274 @@ function listEvidenceNames() {
     });
 }
 
+function isImageFile(file) {
+    return Boolean(file && typeof file.type === "string" && file.type.startsWith("image/"));
+}
+
+function buildEvidencePreviewUrls(files) {
+    return Array.from(files || [])
+        .filter((file) => isImageFile(file))
+        .map((file) => URL.createObjectURL(file));
+}
+
+function revokeEvidencePreviewUrls(urls) {
+    (urls || []).forEach((url) => {
+        try {
+            URL.revokeObjectURL(url);
+        } catch (error) {}
+    });
+}
+
+function replaceEvidencePreviewUrlsForProject(projectId, nextUrls) {
+    if (!projectId) {
+        return;
+    }
+
+    const previous = evidencePreviewUrlsByProjectId.get(projectId) || [];
+    revokeEvidencePreviewUrls(previous);
+
+    if (nextUrls.length) {
+        evidencePreviewUrlsByProjectId.set(projectId, nextUrls);
+        return;
+    }
+
+    evidencePreviewUrlsByProjectId.delete(projectId);
+}
+
+function setDraftEvidencePreviewUrls(nextUrls) {
+    revokeEvidencePreviewUrls(draftEvidencePreviewUrls);
+    draftEvidencePreviewUrls = nextUrls;
+}
+
+function clearAllEvidencePreviewUrls() {
+    evidencePreviewUrlsByProjectId.forEach((urls) => revokeEvidencePreviewUrls(urls));
+    evidencePreviewUrlsByProjectId.clear();
+    setDraftEvidencePreviewUrls([]);
+}
+
+function currentEvidenceNamesFromContext() {
+    const selectedNames = Array.from(evidenceInput.files || []).map((f) => f.name);
+    if (evidenceSelectionTouched) {
+        return selectedNames;
+    }
+
+    if (!activeProjectId) {
+        return selectedNames;
+    }
+
+    const activeProject = projects.find((project) => project.id === activeProjectId);
+    if (!activeProject || !activeProject.data || !Array.isArray(activeProject.data.evidence)) {
+        return selectedNames;
+    }
+
+    return activeProject.data.evidence.slice();
+}
+
+function supportsIndexedDb() {
+    return typeof indexedDB !== "undefined";
+}
+
+function openEvidenceDb() {
+    if (!supportsIndexedDb()) {
+        return Promise.resolve(null);
+    }
+
+    if (evidenceDbPromise) {
+        return evidenceDbPromise;
+    }
+
+    evidenceDbPromise = new Promise((resolve, reject) => {
+        const request = indexedDB.open(EVIDENCE_DB_NAME, EVIDENCE_DB_VERSION);
+
+        request.onupgradeneeded = () => {
+            const db = request.result;
+            if (!db.objectStoreNames.contains(EVIDENCE_STORE_NAME)) {
+                db.createObjectStore(EVIDENCE_STORE_NAME, { keyPath: "projectId" });
+            }
+        };
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error("Failed to open evidence database."));
+    });
+
+    return evidenceDbPromise;
+}
+
+function withEvidenceStore(mode, operation) {
+    return openEvidenceDb().then((db) => {
+        if (!db) {
+            return null;
+        }
+
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(EVIDENCE_STORE_NAME, mode);
+            const store = transaction.objectStore(EVIDENCE_STORE_NAME);
+
+            let operationResult;
+            try {
+                operationResult = operation(store);
+            } catch (error) {
+                reject(error);
+                return;
+            }
+
+            transaction.oncomplete = () => resolve(operationResult);
+            transaction.onerror = () => reject(transaction.error || new Error("Evidence store transaction failed."));
+            transaction.onabort = () => reject(transaction.error || new Error("Evidence store transaction aborted."));
+        });
+    });
+}
+
+function readProjectEvidenceEntries(projectId) {
+    if (!projectId) {
+        return Promise.resolve([]);
+    }
+
+    return withEvidenceStore("readonly", (store) => {
+        return new Promise((resolve, reject) => {
+            const request = store.get(projectId);
+            request.onsuccess = () => {
+                const record = request.result;
+                resolve(record && Array.isArray(record.entries) ? record.entries : []);
+            };
+            request.onerror = () => reject(request.error || new Error("Failed to read project evidence."));
+        });
+    }).then((result) => result || []);
+}
+
+function writeProjectEvidenceEntries(projectId, entries) {
+    if (!projectId) {
+        return Promise.resolve();
+    }
+
+    const safeEntries = Array.isArray(entries)
+        ? entries
+              .filter((entry) => entry && entry.blob instanceof Blob)
+              .map((entry) => ({
+                  name: entry.name || "image",
+                  type: entry.type || entry.blob.type || "",
+                  lastModified: Number(entry.lastModified) || Date.now(),
+                  blob: entry.blob
+              }))
+        : [];
+
+    if (!safeEntries.length) {
+        return deleteProjectEvidenceEntries(projectId);
+    }
+
+    return withEvidenceStore("readwrite", (store) => {
+        store.put({
+            projectId,
+            updatedAt: new Date().toISOString(),
+            entries: safeEntries
+        });
+        return true;
+    }).then(() => {});
+}
+
+function deleteProjectEvidenceEntries(projectId) {
+    if (!projectId) {
+        return Promise.resolve();
+    }
+
+    return withEvidenceStore("readwrite", (store) => {
+        store.delete(projectId);
+        return true;
+    }).then(() => {});
+}
+
+function saveEvidenceFilesForProject(projectId, fileList) {
+    const entries = Array.from(fileList || [])
+        .filter((file) => isImageFile(file))
+        .map((file) => ({
+            name: file.name || "image",
+            type: file.type || "",
+            lastModified: Number(file.lastModified) || Date.now(),
+            blob: file
+        }));
+
+    return writeProjectEvidenceEntries(projectId, entries);
+}
+
+function moveProjectEvidenceEntries(sourceProjectId, targetProjectId) {
+    if (!sourceProjectId || !targetProjectId || sourceProjectId === targetProjectId) {
+        return Promise.resolve();
+    }
+
+    return readProjectEvidenceEntries(sourceProjectId).then((entries) => {
+        if (!entries.length) {
+            return deleteProjectEvidenceEntries(targetProjectId);
+        }
+
+        return writeProjectEvidenceEntries(targetProjectId, entries).then(() => deleteProjectEvidenceEntries(sourceProjectId));
+    });
+}
+
+function copyProjectEvidenceEntries(sourceProjectId, targetProjectId) {
+    if (!sourceProjectId || !targetProjectId || sourceProjectId === targetProjectId) {
+        return Promise.resolve();
+    }
+
+    return readProjectEvidenceEntries(sourceProjectId).then((entries) => {
+        if (!entries.length) {
+            return deleteProjectEvidenceEntries(targetProjectId);
+        }
+        return writeProjectEvidenceEntries(targetProjectId, entries);
+    });
+}
+
+function loadEvidencePreviewUrlsForProject(projectId) {
+    if (!projectId) {
+        return Promise.resolve([]);
+    }
+
+    return readProjectEvidenceEntries(projectId).then((entries) => {
+        const urls = entries
+            .map((entry) => {
+                if (!entry || !(entry.blob instanceof Blob)) {
+                    return "";
+                }
+                return URL.createObjectURL(entry.blob);
+            })
+            .filter(Boolean);
+        replaceEvidencePreviewUrlsForProject(projectId, urls);
+        return urls;
+    });
+}
+
+function loadDraftEvidencePreviewUrls() {
+    return readProjectEvidenceEntries(DRAFT_EVIDENCE_KEY).then((entries) => {
+        const urls = entries
+            .map((entry) => {
+                if (!entry || !(entry.blob instanceof Blob)) {
+                    return "";
+                }
+                return URL.createObjectURL(entry.blob);
+            })
+            .filter(Boolean);
+        setDraftEvidencePreviewUrls(urls);
+        return urls;
+    });
+}
+
+function preloadEvidencePreviewUrlsForProjects(projectIds) {
+    const uniqueIds = Array.from(new Set((projectIds || []).filter(Boolean)));
+    if (!uniqueIds.length) {
+        return Promise.resolve();
+    }
+
+    return Promise.all(uniqueIds.map((projectId) => loadEvidencePreviewUrlsForProject(projectId))).then(() => {});
+}
+
+function deleteEvidenceForProjectIds(projectIds) {
+    const uniqueIds = Array.from(new Set((projectIds || []).filter(Boolean)));
+    if (!uniqueIds.length) {
+        return Promise.resolve();
+    }
+
+    return Promise.all(uniqueIds.map((projectId) => deleteProjectEvidenceEntries(projectId))).then(() => {});
+}
+
 function collectData() {
     return {
         identity: {
@@ -433,7 +711,7 @@ function collectData() {
             lessons: value("lessons"),
             futureImprovements: value("futureImprovements")
         },
-        evidence: Array.from(evidenceInput.files || []).map((f) => f.name),
+        evidence: currentEvidenceNamesFromContext(),
         meta: {
             generatedAt: new Date().toLocaleString()
         }
@@ -449,6 +727,7 @@ function buildProjectRecord(data, existingId = "") {
 }
 
 function setFormData(data) {
+    evidenceSelectionTouched = false;
     byId("courseCode").value = data.identity.courseCode || "";
     byId("courseName").value = data.identity.courseName || "";
     byId("academicYear").value = data.identity.academicYear || "2025-26";
@@ -485,6 +764,7 @@ function updateTeamFieldVisibility() {
 }
 
 function clearFormFields() {
+    evidenceSelectionTouched = false;
     form.reset();
     byId("faculty").value = "";
     byId("department").value = "";
@@ -493,6 +773,8 @@ function clearFormFields() {
     inferenceNote.classList.remove("warn");
     inferenceNote.textContent = "";
     evidenceList.innerHTML = "";
+    setDraftEvidencePreviewUrls([]);
+    deleteProjectEvidenceEntries(DRAFT_EVIDENCE_KEY).catch(() => {});
 }
 
 function renderUndoDeleteState() {
@@ -584,7 +866,12 @@ function portfolioHeaderHtml(profileData) {
 function buildPortfolioPreviewHtml(projectDataList) {
     const list = projectDataList || [];
     const header = portfolioHeaderHtml(profile);
-    const sheets = list.map((projectData, index) => buildProjectSheetHtml(projectData, index + 1)).join("");
+    const sheets = list
+        .map((projectRecord, index) => {
+            const previewUrls = evidencePreviewUrlsByProjectId.get(projectRecord.id) || [];
+            return buildProjectSheetHtml(projectRecord.data, index + 1, previewUrls);
+        })
+        .join("");
     return header + sheets;
 }
 
@@ -667,9 +954,9 @@ function section(title, body, optional = false) {
         (optional ? " optional" : "") +
         "\"><h3>" +
         sanitize(title) +
-        "</h3><p>" +
+        "</h3><div class=\"summary-body\">" +
         body +
-        "</p></section>"
+        "</div></section>"
     );
 }
 
@@ -696,6 +983,26 @@ function sectionFromFields(title, fields, optional = true) {
     return section(title, filled.join("<br><br>"), optional);
 }
 
+function evidenceImagesHtml(previewUrls) {
+    if (!previewUrls || !previewUrls.length) {
+        return "";
+    }
+
+    const imageItems = previewUrls
+        .map((url, index) => {
+            return (
+                "<img src=\"" +
+                sanitize(url) +
+                "\" alt=\"Evidence image " +
+                sanitize(String(index + 1)) +
+                "\" loading=\"lazy\">"
+            );
+        })
+        .join("");
+
+    return section("Evidence Images", "<div class=\"evidence-image-grid\">" + imageItems + "</div>", true);
+}
+
 function estimateContentLength(data) {
     return [
         data.narrative.problemStatement,
@@ -714,7 +1021,7 @@ function estimateContentLength(data) {
         .trim().length;
 }
 
-function buildProjectSheetHtml(data, index) {
+function buildProjectSheetHtml(data, index, evidencePreviewUrls = []) {
     const termLabel = [data.identity.academicYear, data.identity.term].filter(Boolean).join(" ");
     const identityMeta = [
         data.identity.courseCode,
@@ -780,9 +1087,20 @@ function buildProjectSheetHtml(data, index) {
         )
     ].filter(Boolean);
 
-    if (data.evidence.length) {
-        blocks.push(section("Evidence", sanitize(data.evidence.join(", ")), true));
+    const evidenceImagesSection = evidenceImagesHtml(evidencePreviewUrls);
+    if (evidenceImagesSection) {
+        blocks.push(evidenceImagesSection);
     }
+
+    const leftColumnBlocks = [];
+    const rightColumnBlocks = [];
+    blocks.forEach((block, blockIndex) => {
+        if (blockIndex % 2 === 0) {
+            leftColumnBlocks.push(block);
+        } else {
+            rightColumnBlocks.push(block);
+        }
+    });
 
     const likelyOnePage = estimateContentLength(data) <= 2600;
     const profileCorner = profileHtml(profile, index);
@@ -796,9 +1114,11 @@ function buildProjectSheetHtml(data, index) {
         (identityMeta || "Fill in project identity fields") +
         "</p></div>" +
         profileCorner +
-        "</div></header><div class=\"print-grid\">" +
-        blocks.join("") +
-        "</div></article>"
+        "</div></header><div class=\"print-grid\"><div class=\"print-col\">" +
+        leftColumnBlocks.join("") +
+        "</div><div class=\"print-col\">" +
+        rightColumnBlocks.join("") +
+        "</div></div></article>"
     );
 }
 
@@ -806,19 +1126,21 @@ function renderPreview() {
     const selectedProject = projects.find((project) => project.id === activeProjectId);
 
     if (selectedProject) {
-        previewEl.innerHTML = buildPortfolioPreviewHtml([selectedProject.data]);
+        previewEl.innerHTML = buildPortfolioPreviewHtml([selectedProject]);
         printFitHint.textContent = "Previewing selected project. PDF export includes all saved projects in list order.";
         return;
     }
 
     if (editorOpen) {
-        previewEl.innerHTML = buildPortfolioPreviewHtml([collectData()]);
+        const draftRecord = { id: "__draft__", data: collectData() };
+        previewEl.innerHTML =
+            portfolioHeaderHtml(profile) + buildProjectSheetHtml(draftRecord.data, 1, draftEvidencePreviewUrls);
         printFitHint.textContent = "Previewing current draft project. Save it to include in exports.";
         return;
     }
 
     if (projects.length) {
-        previewEl.innerHTML = buildPortfolioPreviewHtml(projects.map((project) => project.data));
+        previewEl.innerHTML = buildPortfolioPreviewHtml(projects);
         printFitHint.textContent = "Showing all saved projects. Click a project card to edit that item.";
         return;
     }
@@ -838,7 +1160,7 @@ function renderAllProjectsForPrint() {
     };
 
     previewEl.classList.toggle("split-pages", splitPagesToggle.checked);
-    previewEl.innerHTML = buildPortfolioPreviewHtml(projects.map((project) => project.data));
+    previewEl.innerHTML = buildPortfolioPreviewHtml(projects);
     printFitHint.textContent = "Preparing multi-page print preview for " + projects.length + " project(s).";
     window.print();
     previewEl.innerHTML = snapshot.html;
@@ -932,73 +1254,148 @@ function toTxtAll(projectRecords) {
     return readable + "\n\n" + JSON_START + "\n" + machine + "\n" + JSON_END + "\n";
 }
 
-function parseImportedProjectsFromJson(txt) {
-    const start = txt.indexOf(JSON_START);
-    const end = txt.indexOf(JSON_END);
-    if (start < 0 || end < 0 || end <= start) {
-        return null;
+function safeZipPathPart(text, fallback = "item") {
+    return String(text || fallback)
+        .trim()
+        .replace(/[\\/:*?"<>|]/g, "_")
+        .replace(/\s+/g, "-")
+        .slice(0, 90) || fallback;
+}
+
+async function exportZipBundle() {
+    if (!window.JSZip) {
+        throw new Error("ZIP support is unavailable in this browser session.");
     }
 
-    const rawJson = txt.slice(start + JSON_START.length, end).trim();
-    const parsed = JSON.parse(rawJson);
-    if (!parsed || !Array.isArray(parsed.projects)) {
-        return null;
+    const zip = new window.JSZip();
+    const evidenceIndex = {};
+
+    for (const project of projects) {
+        const entries = await readProjectEvidenceEntries(project.id);
+        if (!entries.length) {
+            continue;
+        }
+
+        evidenceIndex[project.id] = [];
+        const projectFolder = "evidence/" + safeZipPathPart(project.id, "project");
+
+        entries.forEach((entry, index) => {
+            if (!(entry.blob instanceof Blob)) {
+                return;
+            }
+
+            const baseName = safeZipPathPart(entry.name || "image-" + String(index + 1), "image");
+            const prefixedName = String(index + 1).padStart(2, "0") + "-" + baseName;
+            const filePath = projectFolder + "/" + prefixedName;
+
+            zip.file(filePath, entry.blob);
+            evidenceIndex[project.id].push({
+                path: filePath,
+                name: entry.name || baseName,
+                type: entry.type || entry.blob.type || "",
+                lastModified: Number(entry.lastModified) || Date.now()
+            });
+        });
     }
 
-    const importedProjects = parsed.projects
+    const manifest = {
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        profile,
+        projects,
+        sortMode,
+        splitPages: Boolean(splitPagesToggle && splitPagesToggle.checked),
+        evidenceIndex
+    };
+
+    zip.file("manifest.json", JSON.stringify(manifest, null, 2));
+    zip.file("projects.txt", toTxtAll(projects));
+
+    const blob = await zip.generateAsync({ type: "blob" });
+    download("hku-project-collection.zip", blob, "application/zip");
+}
+
+function coerceImportedProjectRecords(rawProjects) {
+    return (Array.isArray(rawProjects) ? rawProjects : [])
         .map((project) => {
             const safeData = project && project.data ? project.data : createEmptyData();
             return buildProjectRecord(safeData, project.id || "");
         })
         .filter(Boolean);
-
-    return {
-        profile: parsed.profile || { name: "", email: "", phone: "", link: "" },
-        projects: importedProjects
-    };
 }
 
-function parseLegacyTxtProjects(txt) {
-    const chunks = txt
-        .split(/=+\s*\nPROJECT\s+\d+\s*\n=+\s*\n/g)
-        .map((chunk) => chunk.trim())
-        .filter(Boolean);
-
-    if (!chunks.length) {
-        return [];
+async function applyImportedZipBundle(zipFile) {
+    if (!window.JSZip) {
+        throw new Error("ZIP support is unavailable in this browser session.");
     }
 
-    return chunks.map((chunk) => {
-        const data = createEmptyData();
-        const lines = chunk.split(/\r?\n/);
-        const lineByPrefix = (prefix) => {
-            const line = lines.find((item) => item.startsWith(prefix));
-            return line ? line.slice(prefix.length).trim() : "";
-        };
+    const zipData = await zipFile.arrayBuffer();
+    const zip = await window.JSZip.loadAsync(zipData);
+    const manifestFile = zip.file("manifest.json");
+    if (!manifestFile) {
+        throw new Error("Missing manifest.json in ZIP bundle.");
+    }
 
-        data.identity.courseCode = lineByPrefix("Course Code:");
-        data.identity.courseName = lineByPrefix("Course Name:");
-        data.identity.academicYear = lineByPrefix("Academic Year:");
-        data.identity.term = lineByPrefix("Term:");
-        if (!data.identity.academicYear) {
-            const legacySemester = lineByPrefix("Semester:");
-            const match = legacySemester.match(/^(\d{4}-\d{2})\s+(Sem\s*1|Sem\s*2|Summer)$/i);
-            if (match) {
-                data.identity.academicYear = match[1];
-                data.identity.term = match[2].replace(/\s+/, " ");
+    const manifestText = await manifestFile.async("string");
+    const manifest = JSON.parse(manifestText || "{}");
+    const importedProjects = coerceImportedProjectRecords(manifest.projects);
+    if (!importedProjects.length) {
+        throw new Error("No projects found in ZIP bundle.");
+    }
+
+    const priorProjectIds = projects.map((project) => project.id);
+    await deleteEvidenceForProjectIds(priorProjectIds.concat([DRAFT_EVIDENCE_KEY]));
+
+    const evidenceIndex = manifest && manifest.evidenceIndex ? manifest.evidenceIndex : {};
+    for (const projectRecord of importedProjects) {
+        const manifestEntries = Array.isArray(evidenceIndex[projectRecord.id]) ? evidenceIndex[projectRecord.id] : [];
+        const entries = [];
+
+        for (const manifestEntry of manifestEntries) {
+            if (!manifestEntry || !manifestEntry.path) {
+                continue;
             }
-        }
-        data.identity.projectType = lineByPrefix("Project Type:");
-        data.identity.projectTitle = lineByPrefix("Project Title:");
-        data.hkuContext.faculty = lineByPrefix("Faculty:");
-        data.hkuContext.department = lineByPrefix("Department:");
-        data.team.role = lineByPrefix("Role:");
-        data.team.teamSize = lineByPrefix("Team Size:");
-        data.technical.tools = lineByPrefix("Tools and Stack:");
-        data.meta.generatedAt = lineByPrefix("Generated:") || new Date().toLocaleString();
 
-        return buildProjectRecord(data);
-    });
+            const zipEvidenceFile = zip.file(manifestEntry.path);
+            if (!zipEvidenceFile) {
+                continue;
+            }
+
+            const blob = await zipEvidenceFile.async("blob");
+            entries.push({
+                name: manifestEntry.name || "image",
+                type: manifestEntry.type || blob.type || "",
+                lastModified: Number(manifestEntry.lastModified) || Date.now(),
+                blob
+            });
+        }
+
+        await writeProjectEvidenceEntries(projectRecord.id, entries);
+    }
+
+    projects = importedProjects;
+    activeProjectId = "";
+    clearAllEvidencePreviewUrls();
+    clearFormFields();
+    setEditorOpen(false);
+
+    if (manifest.profile) {
+        setProfileFields(manifest.profile);
+    } else {
+        setProfileFields({ name: "", email: "", phone: "", link: "", displayMode: "per-project" });
+    }
+
+    setSortMode(manifest.sortMode || sortMode || "manual");
+    if (splitPagesToggle) {
+        splitPagesToggle.checked = Boolean(manifest.splitPages);
+    }
+
+    await preloadEvidencePreviewUrlsForProjects(projects.map((project) => project.id));
+
+    applySortMode(sortMode, false);
+    clearError();
+    showStatus("Imported " + importedProjects.length + " project(s) from ZIP bundle.");
+    schedulePersistSessionState();
 }
 
 function download(filename, content, type) {
@@ -1038,7 +1435,7 @@ function schedulePersistSessionState() {
     }, 180);
 }
 
-function autosaveActiveProjectEdit() {
+async function autosaveActiveProjectEdit() {
     if (!editorOpen) {
         return;
     }
@@ -1056,6 +1453,11 @@ function autosaveActiveProjectEdit() {
 
         const created = buildProjectRecord(draftData);
         projects.push(created);
+        if (draftEvidencePreviewUrls.length) {
+            replaceEvidencePreviewUrlsForProject(created.id, draftEvidencePreviewUrls);
+            draftEvidencePreviewUrls = [];
+        }
+        await moveProjectEvidenceEntries(DRAFT_EVIDENCE_KEY, created.id);
         activeProjectId = created.id;
         applySortMode(sortMode, false);
         schedulePersistSessionState();
@@ -1068,6 +1470,9 @@ function autosaveActiveProjectEdit() {
     }
 
     projects[projectIndex] = buildProjectRecord(collectData(), activeProjectId);
+    if (evidenceSelectionTouched) {
+        await saveEvidenceFilesForProject(activeProjectId, evidenceInput.files || []);
+    }
     renderProjectList();
     renderPreview();
     schedulePersistSessionState();
@@ -1079,7 +1484,7 @@ function scheduleAutosaveActiveProjectEdit() {
     }
 
     projectAutoSaveTimer = setTimeout(() => {
-        autosaveActiveProjectEdit();
+        autosaveActiveProjectEdit().catch(() => {});
     }, 320);
 }
 
@@ -1091,6 +1496,7 @@ function restoreSessionState() {
 
     try {
         const parsed = JSON.parse(raw);
+        clearAllEvidencePreviewUrls();
         projects = Array.isArray(parsed.projects) ? parsed.projects : [];
         activeProjectId = parsed.activeProjectId || "";
         setSortMode(parsed.sortMode || "manual");
@@ -1113,9 +1519,20 @@ function restoreSessionState() {
 
         renderProjectList();
         applySortMode(sortMode, false);
-        renderPreview();
-        clearError();
-        showStatus("Recovered previous session automatically.");
+        Promise.all([
+            preloadEvidencePreviewUrlsForProjects(projects.map((project) => project.id)),
+            loadDraftEvidencePreviewUrls()
+        ])
+            .then(() => {
+                renderPreview();
+                clearError();
+                showStatus("Recovered previous session automatically.");
+            })
+            .catch(() => {
+                renderPreview();
+                clearError();
+                showStatus("Recovered previous session automatically.");
+            });
     } catch (error) {
         localStorage.removeItem(SESSION_STORAGE_KEY);
     }
@@ -1145,7 +1562,7 @@ function resetForm() {
     schedulePersistSessionState();
 }
 
-function saveOrUpdateProject() {
+async function saveOrUpdateProject() {
     const outcome = runValidationOrShowErrors();
     if (!outcome.valid) {
         return;
@@ -1154,14 +1571,23 @@ function saveOrUpdateProject() {
     const existingIndex = projects.findIndex((project) => project.id === activeProjectId);
     if (existingIndex >= 0) {
         projects[existingIndex] = buildProjectRecord(outcome.data, activeProjectId);
+        if (evidenceSelectionTouched) {
+            await saveEvidenceFilesForProject(activeProjectId, evidenceInput.files || []);
+        }
         showStatus("Project updated in collection.");
     } else {
         const created = buildProjectRecord(outcome.data);
         projects.push(created);
+        if (draftEvidencePreviewUrls.length) {
+            replaceEvidencePreviewUrlsForProject(created.id, draftEvidencePreviewUrls);
+            draftEvidencePreviewUrls = [];
+        }
+        await moveProjectEvidenceEntries(DRAFT_EVIDENCE_KEY, created.id);
         activeProjectId = created.id;
         showStatus("Project added to collection.");
     }
 
+    evidenceSelectionTouched = false;
     setEditorOpen(false);
     clearFormFields();
     activeProjectId = "";
@@ -1169,7 +1595,7 @@ function saveOrUpdateProject() {
     schedulePersistSessionState();
 }
 
-function duplicateProjectById(projectId) {
+async function duplicateProjectById(projectId) {
     const source = projects.find((project) => project.id === projectId);
     if (!source) {
         return;
@@ -1179,6 +1605,8 @@ function duplicateProjectById(projectId) {
     cloneData.identity.projectTitle = (cloneData.identity.projectTitle || "Untitled Project") + " (Copy)";
     const duplicated = buildProjectRecord(cloneData);
     projects.push(duplicated);
+    await copyProjectEvidenceEntries(projectId, duplicated.id);
+    await loadEvidencePreviewUrlsForProject(duplicated.id);
     activeProjectId = duplicated.id;
     setFormData(duplicated.data);
     setEditorOpen(true, "Editing duplicated project.");
@@ -1238,8 +1666,17 @@ function deleteProjectById(projectId) {
     lastDeletedProjectSnapshot = {
         project: projects[deleteIndex],
         index: deleteIndex,
-        wasActive: activeProjectId === projectId
+        wasActive: activeProjectId === projectId,
+        evidencePreviewUrls: (evidencePreviewUrlsByProjectId.get(projectId) || []).slice()
     };
+    evidencePreviewUrlsByProjectId.delete(projectId);
+    readProjectEvidenceEntries(projectId)
+        .then((entries) => {
+            if (lastDeletedProjectSnapshot && lastDeletedProjectSnapshot.project && lastDeletedProjectSnapshot.project.id === projectId) {
+                lastDeletedProjectSnapshot.evidenceEntries = entries;
+            }
+        })
+        .catch(() => {});
     renderUndoDeleteState();
 
     projects = projects.filter((project) => project.id !== projectId);
@@ -1269,6 +1706,17 @@ function undoDeleteProject() {
         setEditorOpen(true, "Editing restored project.");
     }
 
+    if (lastDeletedProjectSnapshot.evidencePreviewUrls && lastDeletedProjectSnapshot.evidencePreviewUrls.length) {
+        evidencePreviewUrlsByProjectId.set(
+            lastDeletedProjectSnapshot.project.id,
+            lastDeletedProjectSnapshot.evidencePreviewUrls.slice()
+        );
+    }
+
+    if (Array.isArray(lastDeletedProjectSnapshot.evidenceEntries)) {
+        writeProjectEvidenceEntries(lastDeletedProjectSnapshot.project.id, lastDeletedProjectSnapshot.evidenceEntries).catch(() => {});
+    }
+
     clearUndoDeleteState();
     renderProjectList();
     renderPreview();
@@ -1283,8 +1731,17 @@ function selectProjectById(projectId) {
     }
 
     activeProjectId = projectId;
+    evidenceSelectionTouched = false;
+    setDraftEvidencePreviewUrls([]);
     setFormData(project.data);
     setEditorOpen(true, "Editing selected project.");
+    loadEvidencePreviewUrlsForProject(projectId)
+        .then(() => {
+            if (activeProjectId === projectId) {
+                renderPreview();
+            }
+        })
+        .catch(() => {});
     renderProjectList();
     renderPreview();
     schedulePersistSessionState();
@@ -1341,7 +1798,16 @@ form.addEventListener("input", () => {
 });
 
 evidenceInput.addEventListener("change", () => {
+    evidenceSelectionTouched = true;
     listEvidenceNames();
+    const nextPreviewUrls = buildEvidencePreviewUrls(evidenceInput.files || []);
+    if (activeProjectId) {
+        replaceEvidencePreviewUrlsForProject(activeProjectId, nextPreviewUrls);
+        saveEvidenceFilesForProject(activeProjectId, evidenceInput.files || []).catch(() => {});
+    } else {
+        setDraftEvidencePreviewUrls(nextPreviewUrls);
+        saveEvidenceFilesForProject(DRAFT_EVIDENCE_KEY, evidenceInput.files || []).catch(() => {});
+    }
     if (editorOpen) {
         renderPreview();
         scheduleAutosaveActiveProjectEdit();
@@ -1350,7 +1816,11 @@ evidenceInput.addEventListener("change", () => {
 });
 
 byId("newProject").addEventListener("click", startNewProject);
-byId("saveProject").addEventListener("click", saveOrUpdateProject);
+byId("saveProject").addEventListener("click", () => {
+    saveOrUpdateProject().catch(() => {
+        showError("Could not save project right now. Please try again.");
+    });
+});
 byId("cancelEdit").addEventListener("click", resetForm);
 if (undoDeleteBtn) {
     undoDeleteBtn.addEventListener("click", undoDeleteProject);
@@ -1408,55 +1878,12 @@ if (sortProjectsSelect) {
     });
 }
 
-byId("importProjects").addEventListener("click", () => {
-    importTxtInput.value = "";
-    importTxtInput.click();
-});
-
-importTxtInput.addEventListener("change", () => {
-    const file = importTxtInput.files && importTxtInput.files[0];
-    if (!file) {
-        return;
-    }
-
-    if (projects.length && !window.confirm("This will overwrite your current projects. Continue?")) {
-        importTxtInput.value = "";
-        return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-        try {
-            const txt = String(reader.result || "");
-            let importedCollection = parseImportedProjectsFromJson(txt);
-            let importedProjects = [];
-
-            if (importedCollection && importedCollection.projects && importedCollection.projects.length) {
-                importedProjects = importedCollection.projects;
-                setProfileFields(importedCollection.profile);
-            } else {
-                importedProjects = parseLegacyTxtProjects(txt);
-            }
-
-            if (!importedProjects.length) {
-                showError("Could not find importable projects in this TXT file.");
-                return;
-            }
-
-            projects = importedProjects;
-            activeProjectId = "";
-            clearFormFields();
-            setEditorOpen(false);
-            applySortMode(sortMode, false);
-            clearError();
-            showStatus("Imported " + importedProjects.length + " project(s) from TXT.");
-            schedulePersistSessionState();
-        } catch (error) {
-            showError("Import failed: invalid TXT format.");
-        }
-    };
-    reader.readAsText(file);
-});
+if (importBundleZipBtn && importZipInput) {
+    importBundleZipBtn.addEventListener("click", () => {
+        importZipInput.value = "";
+        importZipInput.click();
+    });
+}
 
 projectList.addEventListener("click", (event) => {
     event.stopPropagation();
@@ -1477,8 +1904,13 @@ projectList.addEventListener("click", (event) => {
             deleteProjectById(projectId);
         }
         if (menuButton.getAttribute("data-action") === "duplicate") {
-            duplicateProjectById(projectId);
-            clearError();
+            duplicateProjectById(projectId)
+                .then(() => {
+                    clearError();
+                })
+                .catch(() => {
+                    showError("Could not duplicate project.");
+                });
         }
         if (menuButton.getAttribute("data-action") === "move-up") {
             moveProjectByStep(projectId, -1);
@@ -1606,29 +2038,6 @@ projectList.addEventListener("dragend", () => {
     });
 });
 
-byId("exportTxt").addEventListener("click", () => {
-    if (!projects.length) {
-        showError("No saved projects to export. Create and save at least one project first.");
-        return;
-    }
-
-    const hasNonTextEvidence = projects.some((project) => Array.isArray(project.data.evidence) && project.data.evidence.length);
-    if (hasNonTextEvidence) {
-        const proceed = window.confirm(
-            "TXT export includes text and evidence file names only. Uploaded images/files themselves are not included. Continue?"
-        );
-        if (!proceed) {
-            showStatus("TXT export canceled.");
-            return;
-        }
-    }
-
-    const txtAll = toTxtAll(projects);
-    download("hku-project-collection.txt", txtAll, "text/plain;charset=utf-8");
-    clearError();
-    showStatus("Exported TXT for all saved projects.");
-});
-
 byId("exportPdf").addEventListener("click", () => {
     if (!projects.length) {
         showError("No saved projects to export. Create and save at least one project first.");
@@ -1639,6 +2048,46 @@ byId("exportPdf").addEventListener("click", () => {
     showStatus("Opening print dialog for all saved projects...");
     renderAllProjectsForPrint();
 });
+
+if (exportBundleZipBtn) {
+    exportBundleZipBtn.addEventListener("click", async () => {
+        if (!projects.length) {
+            showError("No saved projects to export. Create and save at least one project first.");
+            return;
+        }
+
+        clearError();
+        showStatus("Preparing ZIP bundle...");
+        try {
+            await exportZipBundle();
+            showStatus("Exported ZIP bundle with projects and evidence images.");
+        } catch (error) {
+            showError("ZIP export failed. " + (error && error.message ? error.message : ""));
+        }
+    });
+}
+
+if (importZipInput) {
+    importZipInput.addEventListener("change", async () => {
+        const file = importZipInput.files && importZipInput.files[0];
+        if (!file) {
+            return;
+        }
+
+        if (projects.length && !window.confirm("This will overwrite your current projects. Continue?")) {
+            importZipInput.value = "";
+            return;
+        }
+
+        clearError();
+        showStatus("Importing ZIP bundle...");
+        try {
+            await applyImportedZipBundle(file);
+        } catch (error) {
+            showError("ZIP import failed. " + (error && error.message ? error.message : "Invalid ZIP format."));
+        }
+    });
+}
 
 window.addEventListener("beforeunload", persistSessionState);
 

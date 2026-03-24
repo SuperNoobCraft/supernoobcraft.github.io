@@ -6,13 +6,14 @@
         <title>HKU Course Project Documentation Tool</title>
         <meta
             name="description"
-            content="A browser-based HKU project summary tool with TXT and PDF export."
+            content="A browser-based HKU project summary tool with ZIP and PDF export."
         />
         <script src="theme.js"></script>
         <link
             rel="stylesheet"
             href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap"
         />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         <link rel="stylesheet" href="styles.css" />
     </head>
     <body>
@@ -63,7 +64,7 @@
                     </p>
 
                     <fieldset class="profile-box">
-                        <legend>Portfolio Header (Optional)</legend>
+                        <legend>Portfolio Header</legend>
                         <div class="grid two">
                             <label>
                                 Name
@@ -97,12 +98,12 @@
                     </fieldset>
 
                     <div class="collection-actions">
-                        <button type="button" id="newProject" class="primary">New Project</button>
-                        <button type="button" id="importProjects">Import Projects (TXT)</button>
-                        <button type="button" id="exportTxt">Export Projects (TXT)</button>
+                        <button type="button" id="newProject">New Project</button>
+                        <button type="button" id="importBundleZip">Import Bundle (ZIP)</button>
+                        <button type="button" id="exportBundleZip">Export Bundle (ZIP)</button>
                         <button type="button" id="exportPdf">Export Portfolio (PDF)</button>
                         <button type="button" id="undoDelete" class="is-hidden" aria-disabled="true">Undo Delete</button>
-                        <input id="importTxtInput" type="file" accept=".txt,text/plain" hidden />
+                        <input id="importZipInput" type="file" accept=".zip,application/zip" hidden />
                     </div>
                     <div class="collection-meta-row">
                         <label class="sort-label" for="sortProjects">
@@ -137,16 +138,16 @@
                         <legend>Project Identity</legend>
                         <div class="grid two">
                             <label>
-                                Course code <span aria-hidden="true">*</span>
+                                <span class="label-title">Course code <span class="required-mark" aria-hidden="true">*</span></span>
                                 <input id="courseCode" name="courseCode" required placeholder="COMP2119" />
                                 <small id="courseCodeHelp">Format: 4 letters + 4 digits.</small>
                             </label>
                             <label>
-                                Course name <span aria-hidden="true">*</span>
+                                <span class="label-title">Course name <span class="required-mark" aria-hidden="true">*</span></span>
                                 <input id="courseName" name="courseName" required placeholder="Object-Oriented Programming and Java" />
                             </label>
                             <label>
-                                Academic year <span aria-hidden="true">*</span>
+                                <span class="label-title">Academic year <span class="required-mark" aria-hidden="true">*</span></span>
                                 <select id="academicYear" name="academicYear" required>
                                     <option>2012-13</option>
                                     <option>2013-14</option>
@@ -170,7 +171,7 @@
                                 </select>
                             </label>
                             <label>
-                                Term <span aria-hidden="true">*</span>
+                                <span class="label-title">Term <span class="required-mark" aria-hidden="true">*</span></span>
                                 <select id="term" name="term" required>
                                     <option value="">Select term</option>
                                     <option>Sem 1</option>
@@ -179,7 +180,7 @@
                                 </select>
                             </label>
                             <label>
-                                Project type <span aria-hidden="true">*</span>
+                                <span class="label-title">Project type <span class="required-mark" aria-hidden="true">*</span></span>
                                 <select id="projectType" name="projectType" required>
                                     <option value="">Select type</option>
                                     <option>Individual Assignment</option>
@@ -190,7 +191,7 @@
                                 </select>
                             </label>
                             <label class="full">
-                                Project title <span aria-hidden="true">*</span>
+                                <span class="label-title">Project title <span class="required-mark" aria-hidden="true">*</span></span>
                                 <input id="projectTitle" name="projectTitle" required placeholder="Smart Study Planner" />
                             </label>
                         </div>
@@ -225,15 +226,15 @@
                                 </label>
                             </div>
                             <label class="full">
-                                Responsibilities (optional)
+                                Responsibilities
                                 <textarea id="responsibilities" name="responsibilities" rows="4" placeholder="Implemented API integration and wrote unit tests..."></textarea>
                             </label>
                             <label class="full">
-                                Tools and tech stack (optional)
+                                Tools and tech stack
                                 <input id="tools" name="tools" placeholder="Java, Spring Boot, PostgreSQL, GitHub Actions" />
                             </label>
                             <label class="full">
-                                Methods used (optional)
+                                Methods used
                                 <textarea id="methods" name="methods" rows="3" placeholder="MVC architecture, agile sprint workflow, REST design principles"></textarea>
                             </label>
                         </div>
@@ -243,34 +244,34 @@
                         <legend>Project Narrative</legend>
                         <div class="grid one">
                             <label>
-                                Problem statement (optional)
+                                Problem statement
                                 <textarea id="problemStatement" name="problemStatement" rows="4"></textarea>
                             </label>
                             <label>
-                                Objectives (optional)
+                                Objectives
                                 <textarea id="objectives" name="objectives" rows="4"></textarea>
                             </label>
                             <label>
-                                Deliverables (optional)
+                                Deliverables
                                 <textarea id="deliverables" name="deliverables" rows="4"></textarea>
                             </label>
                             <label>
-                                Challenges faced (optional)
+                                Challenges faced
                                 <textarea id="challenges" name="challenges" rows="3"></textarea>
                             </label>
                             <label>
-                                Mitigation strategy (optional)
+                                Mitigation strategy
                                 <textarea id="mitigation" name="mitigation" rows="3"></textarea>
                             </label>
                             <label>
-                                Result summary (optional)
+                                Result summary
                                 <textarea id="results" name="results" rows="4"></textarea>
                             </label>
                         </div>
                     </fieldset>
 
                     <fieldset>
-                        <legend>Reflection (Optional)</legend>
+                        <legend>Reflection</legend>
                         <div class="grid one">
                             <label>
                                 Lessons learned
@@ -284,12 +285,12 @@
                     </fieldset>
 
                     <fieldset>
-                        <legend>Evidence (Optional)</legend>
+                        <legend>Evidence</legend>
                         <label>
                             Upload screenshots or prototypes (images only)
                             <input id="evidence" name="evidence" type="file" accept="image/*" multiple />
                         </label>
-                        <small>Files are used only in your browser session and are not uploaded anywhere.</small>
+                        <small>Images are stored locally in your browser for this site and included in ZIP bundle export/import.</small>
                         <ul id="evidenceList" class="file-list"></ul>
                     </fieldset>
 
@@ -319,7 +320,7 @@
                     <li>Fill required fields and click Save or Update Project.</li>
                     <li>Use the 3-dot menu to Edit, Duplicate, Delete, or move project up and down with keyboard-friendly controls.</li>
                     <li>Drag cards for manual ordering, or choose a sort mode from the Sort dropdown.</li>
-                    <li>Export Projects (TXT) for backup and Export Portfolio (PDF) for submission output.</li>
+                    <li>Use Export Bundle (ZIP) for full backup (including images) and Export Portfolio (PDF) for submission output.</li>
                 </ol>
                 <div class="modal-actions">
                     <button type="button" id="welcomeClose" class="primary" onclick="window.dismissWelcomeModal && window.dismissWelcomeModal()">Got it</button>

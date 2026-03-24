@@ -607,6 +607,18 @@ label {
     font-size: 0.93rem;
 }
 
+.label-title {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.2rem;
+}
+
+.required-mark {
+    color: var(--warn);
+    font-weight: 800;
+    line-height: 1;
+}
+
 label small,
 small {
     color: var(--muted);
@@ -796,6 +808,13 @@ button.primary:hover {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.55rem 0.8rem;
+    align-items: start;
+}
+
+.print-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
 }
 
 .summary-section {
@@ -812,8 +831,25 @@ button.primary:hover {
     padding: 0;
 }
 
-.summary-section p {
+.summary-section .summary-body {
     margin: 0;
+}
+
+.evidence-image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 0.35rem;
+    margin-top: 0.1rem;
+}
+
+.evidence-image-grid img {
+    display: block;
+    width: 100%;
+    max-height: 180px;
+    object-fit: contain;
+    border: 1px solid var(--line-soft);
+    border-radius: 8px;
+    background: var(--surface-soft-2);
 }
 
 .preview-meta {
@@ -920,6 +956,10 @@ button.primary:hover {
 
     .print-grid {
         grid-template-columns: 1fr;
+    }
+
+    .print-col {
+        gap: 0.45rem;
     }
 
     .summary-top {
@@ -1062,6 +1102,13 @@ button.primary:hover {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 0.35rem 0.5rem;
+        align-items: start;
+    }
+
+    .print-col {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
     }
 
     .summary-section {
@@ -1077,10 +1124,21 @@ button.primary:hover {
         margin: 0 0 0.15rem;
     }
 
-    .summary-section p {
+    .summary-section .summary-body {
         margin: 0;
         font-size: 8.6pt;
         line-height: 1.2;
+    }
+
+    .evidence-image-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.2rem;
+    }
+
+    .evidence-image-grid img {
+        border: 1px solid #d8d8d8;
+        border-radius: 4px;
+        max-height: 35mm;
     }
 
     .project-sheet.compact-print .summary-section.optional {
