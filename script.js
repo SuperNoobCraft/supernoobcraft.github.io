@@ -1,0 +1,137 @@
+(function () {
+    const topbar = document.querySelector(".topbar");
+    const toggleButton = document.getElementById("themeToggle");
+    const printButton = document.getElementById("printBtn");
+
+    function updateHeaderOffset() {
+        if (!topbar) {
+            return;
+        }
+        const offset = Math.ceil(topbar.getBoundingClientRect().height) + 10;
+        document.documentElement.style.setProperty("--header-offset", offset + "px");
+    }
+
+    function setupAutoHideTopbar() {
+        if (!topbar) {
+            return;
+        }
+
+        let previousY = window.scrollY;
+        window.addEventListener(
+            "scroll",
+            function () {
+                const currentY = window.scrollY;
+                const movingDown = currentY > previousY + 6;
+                const movingUp = currentY < previousY - 6;
+
+                if (currentY < 16 || movingUp) {
+                    topbar.classList.remove("is-hidden");
+                } else if (movingDown && currentY > topbar.offsetHeight + 24) {
+                    topbar.classList.add("is-hidden");
+                }
+
+                previousY = currentY;
+            },
+            { passive: true }
+        );
+    }
+
+    const THEME_KEY = "hkuProjectToolThemeV1";
+    let currentTheme = "light";
+
+    const getTheme = () => {
+        try {
+            return localStorage.getItem(THEME_KEY) || "light";
+        } catch {
+            return "light";
+        }
+    };
+
+    const setTheme = (theme) => {
+        try {
+            localStorage.setItem(THEME_KEY, theme);
+        } catch {}
+        currentTheme = theme;
+        document.documentElement.setAttribute("data-theme", theme);
+        document.documentElement.style.colorScheme = theme;
+        if (toggleButton) {
+            toggleButton.textContent = theme === "dark" ? "Light mode" : "Dark mode";
+        }
+    };
+
+    function initThemeToggle() {
+        // Try HKUTheme first
+        if (window.HKUTheme && window.HKUTheme.initThemeToggle) {
+            window.HKUTheme.initThemeToggle(toggleButton);
+            return;
+        }
+
+        // Fallback: apply saved theme and set up toggle
+        currentTheme = getTheme();
+        document.documentElement.setAttribute("data-theme", currentTheme);
+        document.documentElement.style.colorScheme = currentTheme;
+        if (toggleButton) {
+            toggleButton.textContent = currentTheme === "dark" ? "Light mode" : "Dark mode";
+            toggleButton.addEventListener("click", function () {
+                const newTheme = getTheme() === "dark" ? "light" : "dark";
+                setTheme(newTheme);
+            });
+        }
+
+        // Listen for theme changes from other tabs/windows
+        window.addEventListener("storage", function (event) {
+            if (event.key === THEME_KEY && event.newValue) {
+                setTheme(event.newValue);
+            }
+        });
+    }
+
+    // Preserve theme when navigating via site switcher or internal links
+    document.addEventListener("click", function (event) {
+        const link = event.target.closest(".site-switcher-menu a[href], .top-links a[href]");
+        if (!link || event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+            return;
+        }
+        if (link.target && link.target !== "_self") {
+            return;
+        }
+
+        try {
+            const destination = new URL(link.href, window.location.href);
+            if (destination.origin !== window.location.origin) {
+                return;
+            }
+            if (!destination.pathname.endsWith(".html")) {
+                return;
+            }
+
+            destination.searchParams.set("theme", currentTheme);
+            event.preventDefault();
+            window.location.href = destination.toString();
+        } catch (e) {
+            // Ignore URL parsing errors
+        }
+    });
+
+    if (printButton) {
+        printButton.addEventListener("click", function () {
+            window.print();
+        });
+    }
+
+    updateHeaderOffset();
+    setupAutoHideTopbar();
+    
+    // Check for theme in URL params (set by navigation from other pages)
+    const params = new URLSearchParams(window.location.search);
+    const themeFromUrl = params.get("theme");
+    if (themeFromUrl === "dark" || themeFromUrl === "light") {
+        try {
+            localStorage.setItem("hkuProjectToolThemeV1", themeFromUrl);
+        } catch {}
+    }
+    
+    initThemeToggle();
+    window.addEventListener("resize", updateHeaderOffset, { passive: true });
+    window.addEventListener("orientationchange", updateHeaderOffset, { passive: true });
+})();
