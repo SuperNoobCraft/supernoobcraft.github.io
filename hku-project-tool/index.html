@@ -8,6 +8,7 @@
             name="description"
             content="A browser-based HKU project summary tool with TXT and PDF export."
         />
+        <script src="theme.js"></script>
         <link
             rel="stylesheet"
             href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap"
@@ -17,13 +18,29 @@
     <body>
         <a class="skip-link" href="#main-content">Skip to main content</a>
         <header class="topbar">
-            <div>
-                <p class="eyebrow">HKU Academic Toolkit</p>
-                <h1>Course Project Documentation Tool</h1>
+            <div class="brand-group">
+                <details class="site-switcher">
+                    <summary aria-label="Open site switcher" title="Open site switcher">
+                        <span class="burger-icon" aria-hidden="true">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </span>
+                    </summary>
+                    <nav class="site-switcher-menu" aria-label="Site switcher menu">
+                        <a href="../index.html">Personal CV</a>
+                        <a href="index.html">HKU Tool</a>
+                    </nav>
+                </details>
+                <div>
+                    <p class="eyebrow">HKU Academic Toolkit</p>
+                    <h1>Course Project Documentation Tool</h1>
+                </div>
             </div>
             <nav class="top-links" aria-label="Secondary pages">
-                <a href="help.html">Help</a>
+                <a href="index.html" aria-current="page">Tool</a>
                 <a href="about.html">About</a>
+                <a href="help.html">Help</a>
                 <a href="privacy.html">Privacy</a>
                 <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Toggle color theme">Dark mode</button>
             </nav>
@@ -67,6 +84,21 @@
                         <button type="button" id="exportTxt">Export Projects (TXT)</button>
                         <button type="button" id="exportPdf">Export Portfolio (PDF)</button>
                         <input id="importTxtInput" type="file" accept=".txt,text/plain" hidden />
+                    </div>
+                    <div class="collection-meta-row">
+                        <label class="sort-label" for="sortProjects">
+                            Sort
+                            <select id="sortProjects" aria-label="Sort project list">
+                                <option value="manual">Manual (drag order)</option>
+                                <option value="course-asc">Course code (A-Z)</option>
+                                <option value="course-desc">Course code (Z-A)</option>
+                                <option value="time-newest">Academic time (newest first)</option>
+                                <option value="time-oldest">Academic time (oldest first)</option>
+                                <option value="updated-newest">Recently updated</option>
+                                <option value="updated-oldest">Least recently updated</option>
+                            </select>
+                        </label>
+                        <p id="autosaveHint" class="autosave-hint" aria-live="polite">Autosave active.</p>
                     </div>
                     <label class="inline-toggle" for="splitPagesToggle">
                         <input id="splitPagesToggle" type="checkbox" checked />
@@ -263,6 +295,22 @@
         <footer class="footer-note">
             <a href="../index.html">Back to main site</a>
         </footer>
+
+        <div id="welcomeModal" class="modal-backdrop is-hidden" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+            <section class="modal-card">
+                <h2 id="welcomeTitle">Quick Start Guide</h2>
+                <ol>
+                    <li>Click New Project to open the editor.</li>
+                    <li>Fill required fields and click Save or Update Project.</li>
+                    <li>Use the 3-dot menu to Edit, Duplicate, Delete, or move project up and down with keyboard-friendly controls.</li>
+                    <li>Drag cards for manual ordering, or choose a sort mode from the Sort dropdown.</li>
+                    <li>Export Projects (TXT) for backup and Export Portfolio (PDF) for submission output.</li>
+                </ol>
+                <div class="modal-actions">
+                    <button type="button" id="welcomeClose" class="primary" onclick="window.dismissWelcomeModal && window.dismissWelcomeModal()">Got it</button>
+                </div>
+            </section>
+        </div>
 
         <script src="script.js"></script>
     </body>

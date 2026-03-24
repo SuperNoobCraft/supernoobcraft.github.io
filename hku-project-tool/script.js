@@ -20,7 +20,7 @@ const REQUIRED_FIELDS = [
 const JSON_START = "--- HKU_PROJECT_COLLECTION_JSON_START ---";
 const JSON_END = "--- HKU_PROJECT_COLLECTION_JSON_END ---";
 const SESSION_STORAGE_KEY = "hkuProjectToolSessionV1";
-const THEME_STORAGE_KEY = "hkuProjectToolThemeV1";
+const WELCOME_STORAGE_KEY = "hkuProjectToolWelcomeSeenV1";
 
 const form = document.getElementById("project-form");
 const previewEl = document.getElementById("preview");
@@ -36,12 +36,17 @@ const editorCard = document.getElementById("editorCard");
 const importTxtInput = document.getElementById("importTxtInput");
 const teamFields = document.getElementById("teamFields");
 const splitPagesToggle = document.getElementById("splitPagesToggle");
+const sortProjectsSelect = document.getElementById("sortProjects");
 const profileNameInput = document.getElementById("profileName");
 const profileEmailInput = document.getElementById("profileEmail");
 const profilePhoneInput = document.getElementById("profilePhone");
 const profileLinkInput = document.getElementById("profileLink");
+const autosaveHint = document.getElementById("autosaveHint");
 const statusMessage = document.getElementById("statusMessage");
 const themeToggle = document.getElementById("themeToggle");
+const topbar = document.querySelector(".topbar");
+const welcomeModal = document.getElementById("welcomeModal");
+const welcomeClose = document.getElementById("welcomeClose");
 
 let projects = [];
 let activeProjectId = "";
@@ -49,6 +54,9 @@ let draggingProjectId = "";
 let editorOpen = false;
 let profile = { name: "", email: "", phone: "", link: "" };
 let persistTimer = null;
+let autosaveTicker = null;
+let sortMode = "manual";
+let lastSavedAt = 0;
 
 function showStatus(message, isError = false) {
     statusMessage.textContent = message || "";
@@ -65,16 +73,188 @@ function clearError() {
     errorSummary.textContent = "";
 }
 
+function setSortMode(nextMode) {
+    sortMode = nextMode || "manual";
+    if (sortProjectsSelect && sortProjectsSelect.value !== sortMode) {
+        sortProjectsSelect.value = sortMode;
+    }
+}
+
+function termRank(termValue) {
+    const normalized = (termValue || "").trim().toLowerCase();
+    if (normalized === "sem 1") {
+        return 1;
+    }
+    if (normalized === "sem 2") {
+        return 2;
+    }
+    if (normalized === "summer") {
+        return 3;
+    }
+    return 99;
+}
+
+function academicTimeKey(project) {
+    const yearRaw = (project.data.identity.academicYear || "").trim();
+    const startYear = Number((yearRaw.split("-")[0] || "0").trim()) || 0;
+    return startYear * 10 + termRank(project.data.identity.term);
+}
+
+function applySortMode(mode, announce = true) {
+    setSortMode(mode);
+    if (!projects.length || sortMode === "manual") {
+        renderProjectList();
+        return;
+    }
+
+    const byCode = (a, b) => (a.data.identity.courseCode || "").localeCompare(b.data.identity.courseCode || "");
+    const byUpdated = (a, b) => new Date(a.updatedAt || 0).getTime() - new Date(b.updatedAt || 0).getTime();
+    const byAcademic = (a, b) => academicTimeKey(a) - academicTimeKey(b);
+
+    if (sortMode === "course-asc") {
+        projects.sort(byCode);
+    } else if (sortMode === "course-desc") {
+        projects.sort((a, b) => byCode(b, a));
+    } else if (sortMode === "updated-newest") {
+        projects.sort((a, b) => byUpdated(b, a));
+    } else if (sortMode === "updated-oldest") {
+        projects.sort(byUpdated);
+    } else if (sortMode === "time-newest") {
+        projects.sort((a, b) => byAcademic(b, a));
+    } else if (sortMode === "time-oldest") {
+        projects.sort(byAcademic);
+    }
+
+    renderProjectList();
+    renderPreview();
+    if (announce) {
+        showStatus("Sorted project list by " + sortMode.replace("-", " ") + ".");
+    }
+}
+
+function updateAutosaveHint() {
+    if (!autosaveHint) {
+        return;
+    }
+
+    if (!lastSavedAt) {
+        autosaveHint.textContent = "Autosave active.";
+        return;
+    }
+
+    const seconds = Math.max(0, Math.floor((Date.now() - lastSavedAt) / 1000));
+    if (seconds < 2) {
+        autosaveHint.textContent = "Autosaved just now.";
+        return;
+    }
+
+    if (seconds < 60) {
+        autosaveHint.textContent = "Autosaved " + seconds + "s ago.";
+        return;
+    }
+
+    const minutes = Math.floor(seconds / 60);
+    autosaveHint.textContent = "Autosaved " + minutes + "m ago.";
+}
+
+function startAutosaveTicker() {
+    if (autosaveTicker) {
+        clearInterval(autosaveTicker);
+    }
+    autosaveTicker = setInterval(updateAutosaveHint, 5000);
+    updateAutosaveHint();
+}
+
+function setupWelcomeModal() {
+    if (!welcomeModal || !welcomeClose) {
+        return;
+    }
+
+    let seen = "";
+    try {
+        seen = localStorage.getItem(WELCOME_STORAGE_KEY) || "";
+    } catch (error) {
+        seen = "";
+    }
+
+    const dismiss = () => {
+        welcomeModal.classList.add("is-hidden");
+        try {
+            localStorage.setItem(WELCOME_STORAGE_KEY, "1");
+        } catch (error) {}
+    };
+
+    window.dismissWelcomeModal = dismiss;
+
+    if (!seen) {
+        welcomeModal.classList.remove("is-hidden");
+    }
+
+    welcomeClose.addEventListener("click", dismiss);
+
+    welcomeModal.addEventListener("click", (event) => {
+        if (event.target.closest("#welcomeClose")) {
+            dismiss();
+            return;
+        }
+
+        if (event.target === welcomeModal) {
+            dismiss();
+        }
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !welcomeModal.classList.contains("is-hidden")) {
+            dismiss();
+        }
+    });
+}
+
 function applyTheme(themeName) {
     document.documentElement.setAttribute("data-theme", themeName);
+    document.documentElement.style.colorScheme = themeName;
     themeToggle.textContent = themeName === "dark" ? "Light mode" : "Dark mode";
 }
 
 function initializeTheme() {
-    const saved = localStorage.getItem(THEME_STORAGE_KEY);
-    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const nextTheme = saved || (prefersDark ? "dark" : "light");
-    applyTheme(nextTheme);
+    if (window.HKUTheme) {
+        window.HKUTheme.initThemeToggle(themeToggle);
+        return;
+    }
+    applyTheme("light");
+}
+
+function updateHeaderOffset() {
+    if (!topbar) {
+        return;
+    }
+    const offset = Math.ceil(topbar.getBoundingClientRect().height) + 10;
+    document.documentElement.style.setProperty("--header-offset", offset + "px");
+}
+
+function setupAutoHideTopbar() {
+    if (!topbar) {
+        return;
+    }
+
+    let previousY = window.scrollY;
+    window.addEventListener(
+        "scroll",
+        () => {
+            const currentY = window.scrollY;
+            const movingDown = currentY > previousY + 6;
+            const movingUp = currentY < previousY - 6;
+
+            if (currentY < 16 || movingUp) {
+                topbar.classList.remove("is-hidden");
+            } else if (movingDown && currentY > topbar.offsetHeight + 24) {
+                topbar.classList.add("is-hidden");
+            }
+
+            previousY = currentY;
+        },
+        { passive: true }
+    );
 }
 
 function byId(id) {
@@ -311,6 +491,9 @@ function projectCardTemplate(project, index) {
         "<details class=\"item-menu\"><summary>...</summary>" +
         "<div class=\"item-menu-panel\">" +
         "<button type=\"button\" data-action=\"edit\">Edit</button>" +
+        "<button type=\"button\" data-action=\"duplicate\">Duplicate</button>" +
+        "<button type=\"button\" data-action=\"move-up\">Move up</button>" +
+        "<button type=\"button\" data-action=\"move-down\">Move down</button>" +
         "<button type=\"button\" data-action=\"delete\">Delete</button>" +
         "</div></details></li>"
     );
@@ -686,11 +869,14 @@ function persistSessionState() {
         projects,
         activeProjectId,
         editorOpen,
+        sortMode,
         splitPages: splitPagesToggle.checked,
         profile: collectProfile(),
         draft: editorOpen ? collectData() : createEmptyData()
     };
     localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(snapshot));
+    lastSavedAt = Date.now();
+    updateAutosaveHint();
 }
 
 function schedulePersistSessionState() {
@@ -712,6 +898,7 @@ function restoreSessionState() {
         const parsed = JSON.parse(raw);
         projects = Array.isArray(parsed.projects) ? parsed.projects : [];
         activeProjectId = parsed.activeProjectId || "";
+        setSortMode(parsed.sortMode || "manual");
         splitPagesToggle.checked = Boolean(parsed.splitPages);
         setProfileFields(parsed.profile || { name: "", email: "", phone: "", link: "" });
 
@@ -730,6 +917,7 @@ function restoreSessionState() {
         }
 
         renderProjectList();
+        applySortMode(sortMode, false);
         renderPreview();
         clearError();
         showStatus("Recovered previous session automatically.");
@@ -782,8 +970,49 @@ function saveOrUpdateProject() {
     setEditorOpen(false);
     clearFormFields();
     activeProjectId = "";
+    applySortMode(sortMode, false);
+    schedulePersistSessionState();
+}
+
+function duplicateProjectById(projectId) {
+    const source = projects.find((project) => project.id === projectId);
+    if (!source) {
+        return;
+    }
+
+    const cloneData = JSON.parse(JSON.stringify(source.data));
+    cloneData.identity.projectTitle = (cloneData.identity.projectTitle || "Untitled Project") + " (Copy)";
+    const duplicated = buildProjectRecord(cloneData);
+    projects.push(duplicated);
+    activeProjectId = duplicated.id;
+    setFormData(duplicated.data);
+    setEditorOpen(true, "Editing duplicated project.");
+    applySortMode(sortMode, false);
+    showStatus("Duplicated project. You can rename it before saving changes.");
+    schedulePersistSessionState();
+}
+
+function moveProjectByStep(projectId, step) {
+    const fromIndex = projects.findIndex((project) => project.id === projectId);
+    if (fromIndex < 0) {
+        return;
+    }
+
+    const toIndex = fromIndex + step;
+    if (toIndex < 0 || toIndex >= projects.length) {
+        showStatus("Cannot move further in that direction.");
+        return;
+    }
+
+    if (sortMode !== "manual") {
+        setSortMode("manual");
+    }
+
+    const [moved] = projects.splice(fromIndex, 1);
+    projects.splice(toIndex, 0, moved);
     renderProjectList();
     renderPreview();
+    showStatus(step < 0 ? "Project moved up." : "Project moved down.");
     schedulePersistSessionState();
 }
 
@@ -842,6 +1071,10 @@ function moveProject(draggedId, targetId) {
     const toIndex = projects.findIndex((project) => project.id === targetId);
     if (fromIndex < 0 || toIndex < 0) {
         return;
+    }
+
+    if (sortMode !== "manual") {
+        setSortMode("manual");
     }
 
     const [moved] = projects.splice(fromIndex, 1);
@@ -906,6 +1139,13 @@ byId("resetForm").addEventListener("click", () => {
 
 splitPagesToggle.addEventListener("change", schedulePersistSessionState);
 
+if (sortProjectsSelect) {
+    sortProjectsSelect.addEventListener("change", () => {
+        applySortMode(sortProjectsSelect.value);
+        schedulePersistSessionState();
+    });
+}
+
 byId("importProjects").addEventListener("click", () => {
     importTxtInput.value = "";
     importTxtInput.click();
@@ -940,8 +1180,7 @@ importTxtInput.addEventListener("change", () => {
             activeProjectId = "";
             clearFormFields();
             setEditorOpen(false);
-            renderProjectList();
-            renderPreview();
+            applySortMode(sortMode, false);
             clearError();
             showStatus("Imported " + importedProjects.length + " project(s) from TXT.");
             schedulePersistSessionState();
@@ -967,6 +1206,18 @@ projectList.addEventListener("click", (event) => {
         }
         if (menuButton.getAttribute("data-action") === "delete") {
             deleteProjectById(projectId);
+        }
+        if (menuButton.getAttribute("data-action") === "duplicate") {
+            duplicateProjectById(projectId);
+            clearError();
+        }
+        if (menuButton.getAttribute("data-action") === "move-up") {
+            moveProjectByStep(projectId, -1);
+            clearError();
+        }
+        if (menuButton.getAttribute("data-action") === "move-down") {
+            moveProjectByStep(projectId, 1);
+            clearError();
         }
         const parentDetails = menuButton.closest("details");
         if (parentDetails) {
@@ -1075,24 +1326,20 @@ byId("exportPdf").addEventListener("click", () => {
     renderAllProjectsForPrint();
 });
 
-themeToggle.addEventListener("click", () => {
-    const current = document.documentElement.getAttribute("data-theme") || "light";
-    const next = current === "dark" ? "light" : "dark";
-    applyTheme(next);
-    localStorage.setItem(THEME_STORAGE_KEY, next);
-    showStatus("Theme set to " + next + " mode.");
-});
-
 window.addEventListener("beforeunload", persistSessionState);
 
-window.addEventListener("beforeunload", persistSessionState);
+window.addEventListener("resize", updateHeaderOffset);
 
 setEditorOpen(false);
 setProfileFields({ name: "", email: "", phone: "", link: "" });
 updateTeamFieldVisibility();
 initializeTheme();
+setupAutoHideTopbar();
 restoreSessionState();
 if (!projects.length && !editorOpen) {
     renderProjectList();
     renderPreview();
 }
+startAutosaveTicker();
+setupWelcomeModal();
+updateHeaderOffset();

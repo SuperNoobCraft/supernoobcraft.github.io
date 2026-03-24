@@ -4,6 +4,11 @@
         <meta charset="UTF-8" />
         <title>Jim Tze Lau - CV</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <script src="hku-project-tool/theme.js"></script>
+        <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap"
+        />
         <link
             href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
             rel="stylesheet"
@@ -41,9 +46,16 @@
             * {
                 box-sizing: border-box;
             }
+
+            html {
+                min-height: 100%;
+                background: var(--bg-primary);
+            }
+
             body {
                 margin: 0;
                 padding: 0;
+                padding-top: 92px;
                 background: var(--bg-primary);
                 color: var(--text-primary);
                 font-family:
@@ -54,6 +66,135 @@
                     "Segoe UI",
                     sans-serif;
             }
+
+            .topbar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 120;
+                display: flex;
+                justify-content: space-between;
+                gap: 1rem;
+                align-items: flex-start;
+                padding: 1rem 1.4rem;
+                border-bottom: 1px solid var(--border);
+                background: color-mix(in srgb, var(--bg-secondary) 92%, transparent);
+                backdrop-filter: blur(6px);
+            }
+
+            .brand-group {
+                display: flex;
+                align-items: flex-start;
+                gap: 0.7rem;
+                font-family: "Manrope", "Segoe UI", sans-serif;
+            }
+
+            .eyebrow {
+                margin: 0;
+                text-transform: uppercase;
+                letter-spacing: 0.12em;
+                font-size: 0.74rem;
+                color: var(--text-secondary);
+            }
+
+            .brand-title {
+                margin: 0.25rem 0 0;
+                font-size: clamp(1.2rem, 2.4vw, 1.8rem);
+                line-height: 1.15;
+                color: var(--text-primary);
+                font-weight: 800;
+            }
+
+            .site-switcher {
+                position: relative;
+                margin-top: 0.15rem;
+            }
+
+            .site-switcher > summary {
+                list-style: none;
+                width: 2rem;
+                height: 2rem;
+                border: 1px solid var(--border);
+                border-radius: 9px;
+                background: var(--bg-secondary);
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+            }
+
+            .site-switcher > summary::-webkit-details-marker {
+                display: none;
+            }
+
+            .burger-icon {
+                display: inline-grid;
+                gap: 0.18rem;
+            }
+
+            .burger-icon span {
+                display: block;
+                width: 0.9rem;
+                height: 2px;
+                background: var(--text-primary);
+                border-radius: 99px;
+            }
+
+            .site-switcher-menu {
+                position: absolute;
+                left: 0;
+                top: calc(100% + 0.35rem);
+                min-width: 140px;
+                display: grid;
+                gap: 0.2rem;
+                padding: 0.35rem;
+                border-radius: 10px;
+                border: 1px solid var(--border);
+                background: var(--bg-secondary);
+                box-shadow: 0 10px 24px rgba(0, 0, 0, 0.15);
+                z-index: 130;
+            }
+
+            .site-switcher-menu a {
+                text-decoration: none;
+                color: var(--text-primary);
+                background: color-mix(in srgb, var(--bg-secondary) 90%, #ffffff 10%);
+                border: 1px solid var(--border);
+                border-radius: 7px;
+                padding: 0.35rem 0.45rem;
+                font-size: 0.85rem;
+                font-family: "Manrope", "Segoe UI", sans-serif;
+            }
+
+            .site-switcher-menu a:hover {
+                border-color: var(--accent);
+            }
+
+            .top-actions {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+                justify-content: flex-end;
+            }
+
+            .header-btn {
+                border: 1px solid var(--border);
+                border-radius: 999px;
+                padding: 0.35rem 0.7rem;
+                background: var(--bg-secondary);
+                color: var(--text-primary);
+                font-size: 0.82rem;
+                cursor: pointer;
+                font-family: "Manrope", "Segoe UI", sans-serif;
+                font-weight: 700;
+            }
+
+            .header-btn:hover {
+                background: color-mix(in srgb, var(--bg-secondary) 86%, #d9e3eb 14%);
+            }
+
             .page {
                 max-width: 960px;
                 margin: 24px auto;
@@ -207,6 +348,19 @@
             }
 
             @media print {
+                :root,
+                [data-theme="dark"] {
+                    --bg-primary: #ffffff !important;
+                    --bg-secondary: #ffffff !important;
+                    --text-primary: #111111 !important;
+                    --text-secondary: #444444 !important;
+                    --accent: #005f99 !important;
+                    --border: #d8d8d8 !important;
+                    --pill-bg: #eef4ff !important;
+                    --pill-border: #c9d9ff !important;
+                    --pill-text: #1f3b6e !important;
+                }
+
                 /* Prevent effects that can trigger rasterized PDF output in some browsers. */
                 * {
                     transform: none !important;
@@ -259,6 +413,7 @@
                     max-width: none !important;
                     width: 100% !important;
                     padding: 3mm 4mm 4mm !important;
+                    background: #ffffff !important;
                 }
                 .header {
                     display: flex !important;
@@ -266,6 +421,7 @@
                     align-items: center !important;
                     margin-bottom: 10px !important;
                     padding-bottom: 8px !important;
+                    border-bottom-color: #d8d8d8 !important;
                 }
                 .content {
                     display: grid !important;
@@ -292,11 +448,16 @@
                 li {
                     margin-bottom: 3px !important;
                 }
-                .theme-toggle {
-                    display: none;
-                }
                 .no-print {
                     display: none !important;
+                }
+
+                .topbar {
+                    display: none !important;
+                }
+
+                body {
+                    padding-top: 0 !important;
                 }
 
                 /* Hide icon webfonts in print; nearby text keeps contact info readable. */
@@ -311,6 +472,15 @@
                     margin: 0;
                     box-shadow: none;
                     padding: 16px 14px;
+                }
+
+                .topbar {
+                    flex-direction: column;
+                }
+
+                .brand-group,
+                .top-actions {
+                    width: 100%;
                 }
 
                 .header {
@@ -331,11 +501,6 @@
                 }
 
                 /* make buttons wrap under name on mobile */
-                .theme-toggle,
-                .download-btn {
-                    margin-top: 6px;
-                }
-
                 h1 {
                     font-size: 1.5rem;
                 }
@@ -362,35 +527,34 @@
                 color: var(--pill-text);
                 white-space: nowrap;
             }
-            .theme-toggle {
-                margin: 10px 0 18px;
-                padding: 8px 16px;
-                border-radius: 18px;
-                border: 1px solid var(--accent);
-                background: var(--accent);
-                color: #fff;
-                font-size: 0.85rem;
-                cursor: pointer;
-                margin-right: 8px;
-            }
-            .download-btn {
-                margin: 10px 0 18px;
-                padding: 8px 16px;
-                border-radius: 18px;
-                border: 1px solid var(--accent);
-                background: var(--accent);
-                color: #fff;
-                font-size: 0.85rem;
-                cursor: pointer;
-            }
-
-            .download-btn:hover {
-                background: #005a2f;
-            }
-
         </style>
     </head>
     <body>
+        <header class="topbar no-print">
+            <div class="brand-group">
+                <details class="site-switcher">
+                    <summary aria-label="Open site switcher" title="Open site switcher">
+                        <span class="burger-icon" aria-hidden="true">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </span>
+                    </summary>
+                    <nav class="site-switcher-menu" aria-label="Site switcher menu">
+                        <a href="index.html">Personal CV</a>
+                        <a href="hku-project-tool/index.html">HKU Tool</a>
+                    </nav>
+                </details>
+                <div>
+                    <p class="eyebrow">Personal CV</p>
+                    <h1 class="brand-title">Jim Tze Lau</h1>
+                </div>
+            </div>
+            <div class="top-actions">
+                <button type="button" class="header-btn" id="printBtn">Print</button>
+                <button type="button" class="header-btn" id="themeToggle">Dark mode</button>
+            </div>
+        </header>
         <div class="page">
             <header class="header">
                 <img src="images/profile.png" alt="Tze Lau Jim" class="profile-img" />
@@ -425,8 +589,6 @@
                         </a>
                     </div>
                 </div>
-                <button class="theme-toggle" onclick="toggleTheme()">Dark Mode</button>
-                <button class="download-btn no-print" onclick="window.print()">Print as PDF</button>
             </header>
             <div class="content">
                 <!-- LEFT COLUMN -->
@@ -687,18 +849,20 @@
             </div>
         </div>
         <script>
-            function toggleTheme() {
-                const root = document.documentElement;
-                const isDark = root.getAttribute("data-theme") === "dark";
-                root.setAttribute("data-theme", isDark ? "light" : "dark");
-                document.querySelector(".theme-toggle").textContent = isDark ? "Dark Mode" : "Light Mode";
-                localStorage.setItem("theme", isDark ? "light" : "dark");
-            }
-            const saved = localStorage.getItem("theme") || "light";
-            document.documentElement.setAttribute("data-theme", saved);
-            window.addEventListener("DOMContentLoaded", () => {
-                document.querySelector(".theme-toggle").textContent = saved === "dark" ? "Light Mode" : "Dark Mode";
-            });
+            (function () {
+                const toggleButton = document.getElementById("themeToggle");
+                const printButton = document.getElementById("printBtn");
+
+                if (window.HKUTheme) {
+                    window.HKUTheme.initThemeToggle(toggleButton);
+                }
+
+                if (printButton) {
+                    printButton.addEventListener("click", function () {
+                        window.print();
+                    });
+                }
+            })();
         </script>
     </body>
 </html>

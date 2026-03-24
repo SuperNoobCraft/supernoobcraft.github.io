@@ -4,23 +4,43 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>HKU Tool - Privacy</title>
+        <script src="theme.js"></script>
+        <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap"
+        />
         <link rel="stylesheet" href="styles.css" />
-        <script>
-            (function () {
-                try {
-                    const savedTheme = localStorage.getItem("hkuProjectToolThemeV1");
-                    if (savedTheme) {
-                        document.documentElement.setAttribute("data-theme", savedTheme);
-                    }
-                } catch (err) {}
-            })();
-        </script>
     </head>
     <body>
-        <div class="top-links" style="max-width: 860px; margin: 1rem auto 0; justify-content: flex-end;">
-            <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Toggle color theme">Dark mode</button>
-        </div>
-        <main class="card" style="max-width: 860px; margin: 1rem auto;">
+        <header class="topbar">
+            <div class="brand-group">
+                <details class="site-switcher">
+                    <summary aria-label="Open site switcher" title="Open site switcher">
+                        <span class="burger-icon" aria-hidden="true">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </span>
+                    </summary>
+                    <nav class="site-switcher-menu" aria-label="Site switcher menu">
+                        <a href="../index.html">Personal CV</a>
+                        <a href="index.html">HKU Tool</a>
+                    </nav>
+                </details>
+                <div>
+                    <p class="eyebrow">HKU Academic Toolkit</p>
+                    <h1>Course Project Documentation Tool</h1>
+                </div>
+            </div>
+            <nav class="top-links" aria-label="Site pages">
+                <a href="index.html">Tool</a>
+                <a href="about.html">About</a>
+                <a href="help.html">Help</a>
+                <a href="privacy.html" aria-current="page">Privacy</a>
+                <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Toggle color theme">Dark mode</button>
+            </nav>
+        </header>
+        <main class="card page-content-card">
             <h1>Privacy</h1>
             <p>
                 No account is required. This tool does not upload your project content to a server.
@@ -52,28 +72,54 @@
                 when needed.
             </p>
 
-            <p><a href="index.html">Back to tool</a></p>
         </main>
 
         <script>
             (function () {
-                const key = "hkuProjectToolThemeV1";
                 const btn = document.getElementById("themeToggle");
+                const header = document.querySelector(".topbar");
+                const root = document.documentElement;
 
-                function applyTheme(name) {
-                    document.documentElement.setAttribute("data-theme", name);
-                    btn.textContent = name === "dark" ? "Light mode" : "Dark mode";
+                function updateHeaderOffset() {
+                    if (!header) {
+                        return;
+                    }
+                    const offset = Math.ceil(header.getBoundingClientRect().height) + 10;
+                    root.style.setProperty("--header-offset", offset + "px");
                 }
 
-                const current = document.documentElement.getAttribute("data-theme") || "light";
-                applyTheme(current);
+                function setupAutoHideHeader() {
+                    if (!header) {
+                        return;
+                    }
 
-                btn.addEventListener("click", function () {
-                    const now = document.documentElement.getAttribute("data-theme") || "light";
-                    const next = now === "dark" ? "light" : "dark";
-                    applyTheme(next);
-                    localStorage.setItem(key, next);
-                });
+                    let previousY = window.scrollY;
+                    window.addEventListener(
+                        "scroll",
+                        function () {
+                            const currentY = window.scrollY;
+                            const movingDown = currentY > previousY + 6;
+                            const movingUp = currentY < previousY - 6;
+
+                            if (currentY < 16 || movingUp) {
+                                header.classList.remove("is-hidden");
+                            } else if (movingDown && currentY > header.offsetHeight + 24) {
+                                header.classList.add("is-hidden");
+                            }
+
+                            previousY = currentY;
+                        },
+                        { passive: true }
+                    );
+                }
+
+                if (window.HKUTheme) {
+                    window.HKUTheme.initThemeToggle(btn);
+                }
+                updateHeaderOffset();
+                setupAutoHideHeader();
+
+                window.addEventListener("resize", updateHeaderOffset);
             })();
         </script>
     </body>

@@ -1,4 +1,5 @@
 :root {
+    --header-offset: 96px;
     --bg: #eef4f8;
     --bg-accent: #dce8f2;
     --card: #ffffff;
@@ -46,12 +47,19 @@
     box-sizing: border-box;
 }
 
+html {
+    min-height: 100%;
+    background: linear-gradient(180deg, var(--bg), var(--bg-accent));
+}
+
 body {
     margin: 0;
+    padding-top: var(--header-offset);
     font-family: "Manrope", "Segoe UI", sans-serif;
     color: var(--text);
     background: linear-gradient(180deg, var(--bg), var(--bg-accent));
     min-height: 100vh;
+    overscroll-behavior-y: none;
 }
 
 .skip-link {
@@ -77,11 +85,98 @@ legend {
 }
 
 .topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 90;
     display: flex;
     justify-content: space-between;
     gap: 1rem;
     align-items: flex-start;
-    padding: 1.2rem 1.4rem;
+    padding: 1rem 1.4rem;
+    background: color-mix(in srgb, var(--card) 92%, transparent);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(6px);
+    transition: transform 0.25s ease;
+}
+
+.topbar.is-hidden {
+    transform: translateY(calc(-100% - 4px));
+}
+
+.brand-group {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+}
+
+.site-switcher {
+    position: relative;
+    margin-top: 0.15rem;
+}
+
+.site-switcher > summary {
+    list-style: none;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--surface-soft);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.site-switcher > summary::-webkit-details-marker {
+    display: none;
+}
+
+.site-switcher > summary:hover {
+    background: var(--surface-soft-2);
+}
+
+.burger-icon {
+    display: inline-grid;
+    gap: 0.18rem;
+}
+
+.burger-icon span {
+    display: block;
+    width: 0.9rem;
+    height: 2px;
+    background: var(--strong);
+    border-radius: 99px;
+}
+
+.site-switcher-menu {
+    position: absolute;
+    left: 0;
+    top: calc(100% + 0.35rem);
+    min-width: 140px;
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.35rem;
+    border-radius: 10px;
+    border: 1px solid var(--line-strong);
+    background: var(--card);
+    box-shadow: 0 10px 24px rgba(12, 45, 65, 0.16);
+    z-index: 110;
+}
+
+.site-switcher-menu a {
+    text-decoration: none;
+    color: var(--text);
+    background: var(--surface-soft-2);
+    border: 1px solid var(--line-soft-2);
+    border-radius: 7px;
+    padding: 0.35rem 0.45rem;
+    font-size: 0.85rem;
+}
+
+.site-switcher-menu a:hover {
+    background: var(--surface-soft);
 }
 
 .eyebrow {
@@ -104,6 +199,11 @@ legend {
     gap: 0.85rem;
     flex-wrap: wrap;
     align-items: center;
+}
+
+.page-content-card {
+    max-width: 860px;
+    margin: 1rem auto;
 }
 
 .top-links a,
@@ -203,6 +303,38 @@ legend {
     flex-wrap: wrap;
     gap: 0.45rem;
     margin-bottom: 0.65rem;
+}
+
+.collection-meta-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.8rem;
+    align-items: center;
+    margin-bottom: 0.55rem;
+    flex-wrap: wrap;
+}
+
+.sort-label {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.88rem;
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.sort-label select {
+    min-width: 220px;
+    width: auto;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+}
+
+.autosave-hint {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--muted);
 }
 
 .inline-toggle {
@@ -560,6 +692,48 @@ button.primary:hover {
     color: var(--muted);
 }
 
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 140;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: color-mix(in srgb, var(--bg) 48%, transparent);
+    backdrop-filter: blur(2px);
+}
+
+.modal-backdrop.is-hidden {
+    display: none;
+}
+
+.modal-card {
+    width: min(620px, 96vw);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 1rem;
+    box-shadow: 0 14px 34px rgba(12, 45, 65, 0.2);
+}
+
+.modal-card h2 {
+    color: var(--strong);
+    margin-bottom: 0.5rem;
+}
+
+.modal-card ol {
+    margin: 0;
+    padding-left: 1.15rem;
+    color: var(--text);
+    line-height: 1.45;
+}
+
+.modal-actions {
+    margin-top: 0.85rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
 @media (max-width: 1024px) {
     .layout {
         grid-template-columns: 1fr;
@@ -579,7 +753,24 @@ button.primary:hover {
         flex-direction: column;
     }
 
+    .brand-group {
+        width: 100%;
+    }
+
     .top-links {
+        width: 100%;
+    }
+
+    .collection-meta-row {
+        align-items: flex-start;
+    }
+
+    .sort-label {
+        width: 100%;
+    }
+
+    .sort-label select {
+        min-width: 0;
         width: 100%;
     }
 
