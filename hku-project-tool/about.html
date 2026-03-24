@@ -5,19 +5,81 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>HKU Tool - About</title>
         <link rel="stylesheet" href="styles.css" />
+        <script>
+            (function () {
+                try {
+                    const savedTheme = localStorage.getItem("hkuProjectToolThemeV1");
+                    if (savedTheme) {
+                        document.documentElement.setAttribute("data-theme", savedTheme);
+                    }
+                } catch (err) {}
+            })();
+        </script>
     </head>
     <body>
+        <div class="top-links" style="max-width: 860px; margin: 1rem auto 0; justify-content: flex-end;">
+            <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Toggle color theme">Dark mode</button>
+        </div>
         <main class="card" style="max-width: 860px; margin: 1rem auto;">
             <h1>About</h1>
             <p>
-                The HKU Course Project Documentation Tool is a browser-based app designed to help HKU students
-                structure, refine, and export project summaries for portfolio and academic use.
+                The HKU Course Project Documentation Tool is a browser-based app for HKU students to build
+                structured, multi-course project documentation for portfolio, internship, and reflection use.
             </p>
             <p>
-                It is intentionally lightweight and runs fully on the client side for simplicity, privacy, and
-                maintainability.
+                It runs fully client-side with no login and no backend. Data stays in the browser, while exports
+                provide portable records for reuse and submission.
             </p>
+
+            <h2>Current Features</h2>
+            <ul>
+                <li>Multi-project collection with drag-to-reorder cards.</li>
+                <li>Edit or delete per project using the 3-dot menu.</li>
+                <li>Academic year and term selection for cleaner input flow.</li>
+                <li>Conditional team fields for group assignments only.</li>
+                <li>Optional profile header (name and contacts) shown in preview and exports.</li>
+                <li>TXT export and TXT import for data portability.</li>
+                <li>PDF export with optional one-project-per-page toggle.</li>
+                <li>Dark mode and automatic recovery after accidental refresh.</li>
+            </ul>
+
+            <h2>Usability and Accessibility</h2>
+            <ul>
+                <li>Keyboard-friendly navigation with skip link and focus outlines.</li>
+                <li>Status announcements through a live region for user feedback.</li>
+                <li>Responsive layout for desktop and mobile screens.</li>
+                <li>Print-focused export styling that removes interface noise in PDF output.</li>
+            </ul>
+
+            <h2>Design Scope</h2>
+            <p>
+                The scope is intentionally lightweight and maintainable for coursework: clear structure, practical
+                export outputs, and HKU-oriented workflow decisions without external services.
+            </p>
+
             <p><a href="index.html">Back to tool</a></p>
         </main>
+
+        <script>
+            (function () {
+                const key = "hkuProjectToolThemeV1";
+                const btn = document.getElementById("themeToggle");
+
+                function applyTheme(name) {
+                    document.documentElement.setAttribute("data-theme", name);
+                    btn.textContent = name === "dark" ? "Light mode" : "Dark mode";
+                }
+
+                const current = document.documentElement.getAttribute("data-theme") || "light";
+                applyTheme(current);
+
+                btn.addEventListener("click", function () {
+                    const now = document.documentElement.getAttribute("data-theme") || "light";
+                    const next = now === "dark" ? "light" : "dark";
+                    applyTheme(next);
+                    localStorage.setItem(key, next);
+                });
+            })();
+        </script>
     </body>
 </html>

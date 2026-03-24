@@ -5,14 +5,76 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>HKU Tool - Privacy</title>
         <link rel="stylesheet" href="styles.css" />
+        <script>
+            (function () {
+                try {
+                    const savedTheme = localStorage.getItem("hkuProjectToolThemeV1");
+                    if (savedTheme) {
+                        document.documentElement.setAttribute("data-theme", savedTheme);
+                    }
+                } catch (err) {}
+            })();
+        </script>
     </head>
     <body>
+        <div class="top-links" style="max-width: 860px; margin: 1rem auto 0; justify-content: flex-end;">
+            <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Toggle color theme">Dark mode</button>
+        </div>
         <main class="card" style="max-width: 860px; margin: 1rem auto;">
             <h1>Privacy</h1>
-            <p>No account is required and no project information is uploaded by this tool.</p>
-            <p>Drafts are stored only in your browser local storage when you choose Save Draft.</p>
-            <p>Uploaded evidence files remain in your browser session only.</p>
+            <p>
+                No account is required. This tool does not upload your project content to a server.
+            </p>
+
+            <h2>What Is Stored Locally</h2>
+            <ul>
+                <li>Project collection data and ordering.</li>
+                <li>Current draft state for accidental refresh recovery.</li>
+                <li>Optional profile header details (name and contacts).</li>
+                <li>Theme preference (light or dark mode).</li>
+            </ul>
+
+            <h2>What Is Not Uploaded</h2>
+            <ul>
+                <li>Form content is not sent to external APIs by this tool.</li>
+                <li>Exported TXT and PDF files are generated in-browser and downloaded directly.</li>
+            </ul>
+
+            <h2>File Upload Note</h2>
+            <p>
+                Evidence files (images) are handled in-browser only. Browsers do not allow restoring file input
+                binaries after refresh, so file names may remain in data while actual files must be reselected.
+            </p>
+
+            <h2>Clearing Data</h2>
+            <p>
+                To remove local data, clear browser site storage for this page or use a private/incognito session
+                when needed.
+            </p>
+
             <p><a href="index.html">Back to tool</a></p>
         </main>
+
+        <script>
+            (function () {
+                const key = "hkuProjectToolThemeV1";
+                const btn = document.getElementById("themeToggle");
+
+                function applyTheme(name) {
+                    document.documentElement.setAttribute("data-theme", name);
+                    btn.textContent = name === "dark" ? "Light mode" : "Dark mode";
+                }
+
+                const current = document.documentElement.getAttribute("data-theme") || "light";
+                applyTheme(current);
+
+                btn.addEventListener("click", function () {
+                    const now = document.documentElement.getAttribute("data-theme") || "light";
+                    const next = now === "dark" ? "light" : "dark";
+                    applyTheme(next);
+                    localStorage.setItem(key, next);
+                });
+            })();
+        </script>
     </body>
 </html>

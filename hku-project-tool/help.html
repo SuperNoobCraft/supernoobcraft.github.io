@@ -5,20 +5,87 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>HKU Tool - Help</title>
         <link rel="stylesheet" href="styles.css" />
+        <script>
+            (function () {
+                try {
+                    const savedTheme = localStorage.getItem("hkuProjectToolThemeV1");
+                    if (savedTheme) {
+                        document.documentElement.setAttribute("data-theme", savedTheme);
+                    }
+                } catch (err) {}
+            })();
+        </script>
     </head>
     <body>
+        <div class="top-links" style="max-width: 860px; margin: 1rem auto 0; justify-content: flex-end;">
+            <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Toggle color theme">Dark mode</button>
+        </div>
         <main class="card" style="max-width: 860px; margin: 1rem auto;">
             <h1>Help</h1>
-            <p>Use the main page to fill project details, then export as TXT or PDF.</p>
-            <h2>Quick Steps</h2>
+            <p>
+                This tool helps you build a multi-project HKU portfolio, reorder projects, and export to TXT or PDF.
+            </p>
+
+            <h2>Quick Start</h2>
             <ol>
-                <li>Enter project identity and contribution details.</li>
-                <li>Use optional reflection sections if needed.</li>
-                <li>Check the live preview.</li>
-                <li>Save draft locally.</li>
-                <li>Export TXT or use Print as PDF.</li>
+                <li>Fill optional Portfolio Header details (name and contacts) in Project Collection.</li>
+                <li>Click New Project.</li>
+                <li>Complete required fields: course code, course name, academic year, term, project type, project title, tools.</li>
+                <li>Click Save or Update Project to add the card.</li>
+                <li>Repeat for additional courses.</li>
+                <li>Drag cards to reorder output.</li>
+                <li>Use Export Projects (TXT) for reusable data and Export Portfolio (PDF) for final submission.</li>
             </ol>
+
+            <h2>Tutorial With Sample Inputs</h2>
+            <p>Try this mini run to verify your flow:</p>
+            <ol>
+                <li>Create project 1: Course code COMP2113, year 2025-26, term Sem 1, type Group Project.</li>
+                <li>Create project 2: Course code BSIM3021, year 2025-26, term Sem 2, type Individual Assignment.</li>
+                <li>Open the 3-dot menu on project 2 and click Edit, then update title.</li>
+                <li>Drag project 2 above project 1.</li>
+                <li>Toggle Each project on individual page on and off, then export PDF both ways.</li>
+                <li>Export TXT, refresh browser, then use Import Projects (TXT) to restore.</li>
+            </ol>
+
+            <h2>Tips</h2>
+            <ul>
+                <li>Use Dark mode button in the top-right navigation to switch themes.</li>
+                <li>Role and team size appear only when Project type is Group Project.</li>
+                <li>Contribution and narrative text areas are optional, so quick summaries are allowed.</li>
+                <li>Session auto-recovery restores your previous state after accidental refresh.</li>
+            </ul>
+
+            <h2>Troubleshooting</h2>
+            <ul>
+                <li>If the 3-dot menu seems unresponsive, click directly on ... first, then choose Edit or Delete.</li>
+                <li>If import fails, ensure the TXT came from this tool's Export Projects (TXT).</li>
+                <li>If PDF text looks odd, use browser Print and choose Save as PDF (Chrome/Edge recommended).</li>
+            </ul>
+
             <p><a href="index.html">Back to tool</a></p>
         </main>
+
+        <script>
+            (function () {
+                const key = "hkuProjectToolThemeV1";
+                const btn = document.getElementById("themeToggle");
+
+                function applyTheme(name) {
+                    document.documentElement.setAttribute("data-theme", name);
+                    btn.textContent = name === "dark" ? "Light mode" : "Dark mode";
+                }
+
+                const current = document.documentElement.getAttribute("data-theme") || "light";
+                applyTheme(current);
+
+                btn.addEventListener("click", function () {
+                    const now = document.documentElement.getAttribute("data-theme") || "light";
+                    const next = now === "dark" ? "light" : "dark";
+                    applyTheme(next);
+                    localStorage.setItem(key, next);
+                });
+            })();
+        </script>
     </body>
 </html>
