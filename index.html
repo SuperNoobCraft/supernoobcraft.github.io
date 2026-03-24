@@ -22,6 +22,7 @@
         />
         <style>
             :root {
+                --header-offset: 92px;
                 --bg-primary: #f4f4f4;
                 --bg-secondary: #ffffff;
                 --text-primary: #222;
@@ -55,7 +56,7 @@
             body {
                 margin: 0;
                 padding: 0;
-                padding-top: 92px;
+                padding-top: var(--header-offset);
                 background: var(--bg-primary);
                 color: var(--text-primary);
                 font-family:
@@ -81,6 +82,11 @@
                 border-bottom: 1px solid var(--border);
                 background: color-mix(in srgb, var(--bg-secondary) 92%, transparent);
                 backdrop-filter: blur(6px);
+                transition: transform 0.25s ease;
+            }
+
+            .topbar.is-hidden {
+                transform: translateY(calc(-100% - 4px));
             }
 
             .brand-group {
@@ -541,8 +547,9 @@
                         </span>
                     </summary>
                     <nav class="site-switcher-menu" aria-label="Site switcher menu">
-                        <a href="index.html">Personal CV</a>
-                        <a href="hku-project-tool/index.html">HKU Tool</a>
+                        <a href="index.html">Owner's CV</a>
+                        <a href="hku-project-tool/index.html">HKU Toolkit</a>
+                        <a href="http://noobsmp.ddns.net:8123/" target="_blank" rel="noopener noreferrer">NoobSMP Map</a>
                     </nav>
                 </details>
                 <div>
@@ -850,8 +857,42 @@
         </div>
         <script>
             (function () {
+                const topbar = document.querySelector(".topbar");
                 const toggleButton = document.getElementById("themeToggle");
                 const printButton = document.getElementById("printBtn");
+
+                function updateHeaderOffset() {
+                    if (!topbar) {
+                        return;
+                    }
+                    const offset = Math.ceil(topbar.getBoundingClientRect().height) + 10;
+                    document.documentElement.style.setProperty("--header-offset", offset + "px");
+                }
+
+                function setupAutoHideTopbar() {
+                    if (!topbar) {
+                        return;
+                    }
+
+                    let previousY = window.scrollY;
+                    window.addEventListener(
+                        "scroll",
+                        function () {
+                            const currentY = window.scrollY;
+                            const movingDown = currentY > previousY + 6;
+                            const movingUp = currentY < previousY - 6;
+
+                            if (currentY < 16 || movingUp) {
+                                topbar.classList.remove("is-hidden");
+                            } else if (movingDown && currentY > topbar.offsetHeight + 24) {
+                                topbar.classList.add("is-hidden");
+                            }
+
+                            previousY = currentY;
+                        },
+                        { passive: true }
+                    );
+                }
 
                 if (window.HKUTheme) {
                     window.HKUTheme.initThemeToggle(toggleButton);
@@ -862,6 +903,11 @@
                         window.print();
                     });
                 }
+
+                updateHeaderOffset();
+                setupAutoHideTopbar();
+                window.addEventListener("resize", updateHeaderOffset, { passive: true });
+                window.addEventListener("orientationchange", updateHeaderOffset, { passive: true });
             })();
         </script>
     </body>
