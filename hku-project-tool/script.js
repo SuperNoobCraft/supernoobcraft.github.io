@@ -7,27 +7,20 @@ const PREFIX_MAP = {
     ENGG: { faculty: "Engineering", department: "Faculty-level course" }
 };
 
-const SAMPLE_COURSES = {
-    COMP2119: { courseCode: "COMP2119", courseName: "Object-Oriented Programming and Java", projectType: "Group Project" },
-    COMP2396: { courseCode: "COMP2396", courseName: "Object-Oriented Programming and Java", projectType: "Individual Assignment" },
-    BSIM3003: { courseCode: "BSIM3003", courseName: "Digital Business Strategy", projectType: "Group Project" },
-    LAWS2002: { courseCode: "LAWS2002", courseName: "Legal Research and Writing", projectType: "Research Project" }
-};
-
 const REQUIRED_FIELDS = [
     { id: "courseCode", label: "Course code" },
     { id: "courseName", label: "Course name" },
-    { id: "semester", label: "Semester" },
+    { id: "academicYear", label: "Academic year" },
+    { id: "term", label: "Term" },
     { id: "projectType", label: "Project type" },
     { id: "projectTitle", label: "Project title" },
-    { id: "role", label: "Role in team" },
-    { id: "responsibilities", label: "Responsibilities" },
-    { id: "tools", label: "Tools and tech stack" },
-    { id: "problemStatement", label: "Problem statement" },
-    { id: "objectives", label: "Objectives" },
-    { id: "deliverables", label: "Deliverables" },
-    { id: "results", label: "Result summary" }
+    { id: "tools", label: "Tools and tech stack" }
 ];
+
+const JSON_START = "--- HKU_PROJECT_COLLECTION_JSON_START ---";
+const JSON_END = "--- HKU_PROJECT_COLLECTION_JSON_END ---";
+const SESSION_STORAGE_KEY = "hkuProjectToolSessionV1";
+const THEME_STORAGE_KEY = "hkuProjectToolThemeV1";
 
 const form = document.getElementById("project-form");
 const previewEl = document.getElementById("preview");
@@ -39,23 +32,80 @@ const printFitHint = document.getElementById("printFitHint");
 const projectList = document.getElementById("projectList");
 const noProjectsState = document.getElementById("noProjectsState");
 const editorModeHint = document.getElementById("editorModeHint");
+const editorCard = document.getElementById("editorCard");
+const importTxtInput = document.getElementById("importTxtInput");
+const teamFields = document.getElementById("teamFields");
+const splitPagesToggle = document.getElementById("splitPagesToggle");
+const profileNameInput = document.getElementById("profileName");
+const profileEmailInput = document.getElementById("profileEmail");
+const profilePhoneInput = document.getElementById("profilePhone");
+const profileLinkInput = document.getElementById("profileLink");
+const statusMessage = document.getElementById("statusMessage");
+const themeToggle = document.getElementById("themeToggle");
 
-const WORKSPACE_KEY = "hkuProjectWorkspaceV2";
 let projects = [];
 let activeProjectId = "";
 let draggingProjectId = "";
+let editorOpen = false;
+let profile = { name: "", email: "", phone: "", link: "" };
+let persistTimer = null;
+
+function showStatus(message, isError = false) {
+    statusMessage.textContent = message || "";
+    statusMessage.classList.toggle("is-visible", Boolean(message));
+    statusMessage.classList.toggle("error", Boolean(message) && isError);
+}
+
+function showError(message) {
+    errorSummary.textContent = message;
+    showStatus(message, true);
+}
+
+function clearError() {
+    errorSummary.textContent = "";
+}
+
+function applyTheme(themeName) {
+    document.documentElement.setAttribute("data-theme", themeName);
+    themeToggle.textContent = themeName === "dark" ? "Light mode" : "Dark mode";
+}
+
+function initializeTheme() {
+    const saved = localStorage.getItem(THEME_STORAGE_KEY);
+    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const nextTheme = saved || (prefersDark ? "dark" : "light");
+    applyTheme(nextTheme);
+}
 
 function byId(id) {
     return document.getElementById(id);
 }
 
 function sanitize(text) {
-    return text
+    return String(text)
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#39;");
+}
+
+function createEmptyData() {
+    return {
+        identity: { courseCode: "", courseName: "", academicYear: "2025-26", term: "", projectType: "", projectTitle: "" },
+        hkuContext: { faculty: "", department: "" },
+        team: { role: "", teamSize: "" },
+        contribution: { responsibilities: "" },
+        technical: { tools: "", methods: "" },
+        narrative: { problemStatement: "", objectives: "", deliverables: "", challenges: "", mitigation: "", results: "" },
+        reflection: { lessons: "", futureImprovements: "" },
+        evidence: [],
+        meta: { generatedAt: new Date().toLocaleString() }
+    };
+}
+
+function value(id) {
+    return byId(id).value.trim();
 }
 
 function inferFromCourseCode(codeRaw) {
@@ -75,10 +125,6 @@ function inferFromCourseCode(codeRaw) {
     inferenceNote.textContent = prefix ? "No local mapping for prefix " + prefix + ". You can still continue." : "";
 }
 
-function value(id) {
-    return byId(id).value.trim();
-}
-
 function listEvidenceNames() {
     evidenceList.innerHTML = "";
     const files = Array.from(evidenceInput.files || []);
@@ -94,7 +140,8 @@ function collectData() {
         identity: {
             courseCode: value("courseCode").toUpperCase(),
             courseName: value("courseName"),
-            semester: value("semester"),
+            academicYear: value("academicYear"),
+            term: value("term"),
             projectType: value("projectType"),
             projectTitle: value("projectTitle")
         },
@@ -143,7 +190,8 @@ function buildProjectRecord(data, existingId = "") {
 function setFormData(data) {
     byId("courseCode").value = data.identity.courseCode || "";
     byId("courseName").value = data.identity.courseName || "";
-    byId("semester").value = data.identity.semester || "";
+    byId("academicYear").value = data.identity.academicYear || "2025-26";
+    byId("term").value = data.identity.term || "";
     byId("projectType").value = data.identity.projectType || "";
     byId("projectTitle").value = data.identity.projectTitle || "";
 
@@ -163,6 +211,72 @@ function setFormData(data) {
     byId("lessons").value = data.reflection.lessons || "";
     byId("futureImprovements").value = data.reflection.futureImprovements || "";
     inferFromCourseCode(byId("courseCode").value);
+    updateTeamFieldVisibility();
+}
+
+function updateTeamFieldVisibility() {
+    const isGroup = value("projectType") === "Group Project";
+    teamFields.classList.toggle("is-hidden", !isGroup);
+    if (!isGroup) {
+        byId("role").value = "";
+        byId("teamSize").value = "";
+    }
+}
+
+function clearFormFields() {
+    form.reset();
+    byId("faculty").value = "";
+    byId("department").value = "";
+    inferenceNote.textContent = "";
+    evidenceList.innerHTML = "";
+}
+
+function collectProfile() {
+    return {
+        name: (profileNameInput.value || "").trim(),
+        email: (profileEmailInput.value || "").trim(),
+        phone: (profilePhoneInput.value || "").trim(),
+        link: (profileLinkInput.value || "").trim()
+    };
+}
+
+function setProfileFields(profileData) {
+    const safe = profileData || {};
+    profileNameInput.value = safe.name || "";
+    profileEmailInput.value = safe.email || "";
+    profilePhoneInput.value = safe.phone || "";
+    profileLinkInput.value = safe.link || "";
+    profile = collectProfile();
+}
+
+function profileHtml(profileData) {
+    const parts = [];
+    if (profileData.name) {
+        parts.push("<strong>" + sanitize(profileData.name) + "</strong>");
+    }
+    if (profileData.email) {
+        parts.push(sanitize(profileData.email));
+    }
+    if (profileData.phone) {
+        parts.push(sanitize(profileData.phone));
+    }
+    if (profileData.link) {
+        parts.push(sanitize(profileData.link));
+    }
+
+    if (!parts.length) {
+        return "";
+    }
+
+    return "<aside class=\"profile-corner\">" + parts.join("<br>") + "</aside>";
+}
+
+function setEditorOpen(open, modeHint = "") {
+    editorOpen = open;
+    editorCard.classList.toggle("is-hidden", !open);
+    if (modeHint) {
+        editorModeHint.textContent = modeHint;
+    }
 }
 
 function projectCardTemplate(project, index) {
@@ -177,7 +291,9 @@ function projectCardTemplate(project, index) {
         activeClass +
         "\" data-id=\"" +
         sanitize(project.id) +
-        "\" draggable=\"true\">" +
+        "\" draggable=\"true\" tabindex=\"0\" role=\"button\" aria-label=\"Preview project " +
+        sanitize(String(index + 1)) +
+        "\">" +
         "<button type=\"button\" class=\"drag-handle\" aria-label=\"Drag to reorder\">drag</button>" +
         "<div class=\"project-item-main\">" +
         "<p class=\"project-item-title\">" +
@@ -263,111 +379,119 @@ function estimateContentLength(data) {
         .trim().length;
 }
 
-function renderPreview() {
-    const draftData = collectData();
-    const selectedProject = projects.find((project) => project.id === activeProjectId);
-    const dataSet = selectedProject ? [selectedProject.data] : projects.length ? [projects[0].data] : [draftData];
+function buildProjectSheetHtml(data, index) {
+    const termLabel = [data.identity.academicYear, data.identity.term].filter(Boolean).join(" ");
+    const identityMeta = [
+        data.identity.courseCode,
+        data.identity.courseName,
+        termLabel,
+        data.identity.projectType
+    ]
+        .filter(Boolean)
+        .map((item) => sanitize(item))
+        .join(" | ");
 
-    const sheets = dataSet.map((data, index) => {
-        const identityMeta = [
-            data.identity.courseCode,
-            data.identity.courseName,
-            data.identity.semester,
-            data.identity.projectType
-        ]
-            .filter(Boolean)
-            .map((item) => sanitize(item))
-            .join(" | ");
+    const blocks = [
+        section(
+            "HKU Context",
+            "Faculty: " + textOrPlaceholder(data.hkuContext.faculty) + "<br>Department: " + textOrPlaceholder(data.hkuContext.department)
+        ),
+        section(
+            "Project Overview",
+            "Problem statement:<br>" +
+                textOrPlaceholder(data.narrative.problemStatement) +
+                "<br><br>Objectives:<br>" +
+                textOrPlaceholder(data.narrative.objectives) +
+                "<br><br>Deliverables:<br>" +
+                textOrPlaceholder(data.narrative.deliverables)
+        ),
+        section(
+            "Personal Contribution",
+            "Role: " +
+                textOrPlaceholder(data.team.role) +
+                "<br>Team size: " +
+                textOrPlaceholder(data.team.teamSize) +
+                "<br><br>Responsibilities:<br>" +
+                textOrPlaceholder(data.contribution.responsibilities)
+        ),
+        section(
+            "Technical Implementation",
+            "Tools and stack: " +
+                textOrPlaceholder(data.technical.tools) +
+                "<br><br>Methods used:<br>" +
+                textOrPlaceholder(data.technical.methods),
+            true
+        ),
+        section(
+            "Challenges and Outcomes",
+            "Challenges faced:<br>" +
+                textOrPlaceholder(data.narrative.challenges) +
+                "<br><br>Mitigation:<br>" +
+                textOrPlaceholder(data.narrative.mitigation) +
+                "<br><br>Result summary:<br>" +
+                textOrPlaceholder(data.narrative.results),
+            true
+        )
+    ];
 
-        const blocks = [
+    if (hasText(data.reflection.lessons) || hasText(data.reflection.futureImprovements)) {
+        blocks.push(
             section(
-                "HKU Context",
-                "Faculty: " + textOrPlaceholder(data.hkuContext.faculty) + "<br>Department: " + textOrPlaceholder(data.hkuContext.department)
-            ),
-            section(
-                "Project Overview",
-                "Problem statement:<br>" +
-                    textOrPlaceholder(data.narrative.problemStatement) +
-                    "<br><br>Objectives:<br>" +
-                    textOrPlaceholder(data.narrative.objectives) +
-                    "<br><br>Deliverables:<br>" +
-                    textOrPlaceholder(data.narrative.deliverables)
-            ),
-            section(
-                "Personal Contribution",
-                "Role: " +
-                    textOrPlaceholder(data.team.role) +
-                    "<br>Team size: " +
-                    textOrPlaceholder(data.team.teamSize) +
-                    "<br><br>Responsibilities:<br>" +
-                    textOrPlaceholder(data.contribution.responsibilities)
-            ),
-            section(
-                "Technical Implementation",
-                "Tools and stack: " +
-                    textOrPlaceholder(data.technical.tools) +
-                    "<br><br>Methods used:<br>" +
-                    textOrPlaceholder(data.technical.methods),
-                true
-            ),
-            section(
-                "Challenges and Outcomes",
-                "Challenges faced:<br>" +
-                    textOrPlaceholder(data.narrative.challenges) +
-                    "<br><br>Mitigation:<br>" +
-                    textOrPlaceholder(data.narrative.mitigation) +
-                    "<br><br>Result summary:<br>" +
-                    textOrPlaceholder(data.narrative.results),
+                "Reflection",
+                "Lessons learned:<br>" +
+                    textOrPlaceholder(data.reflection.lessons) +
+                    "<br><br>Future improvements:<br>" +
+                    textOrPlaceholder(data.reflection.futureImprovements),
                 true
             )
-        ];
-
-        if (hasText(data.reflection.lessons) || hasText(data.reflection.futureImprovements)) {
-            blocks.push(
-                section(
-                    "Reflection",
-                    "Lessons learned:<br>" +
-                        textOrPlaceholder(data.reflection.lessons) +
-                        "<br><br>Future improvements:<br>" +
-                        textOrPlaceholder(data.reflection.futureImprovements),
-                    true
-                )
-            );
-        }
-
-        if (data.evidence.length) {
-            blocks.push(section("Evidence", sanitize(data.evidence.join(", ")), true));
-        }
-
-        const estimatedLength = estimateContentLength(data);
-        const likelyOnePage = estimatedLength <= 2600;
-
-        return (
-            "<article class=\"project-sheet" +
-            (likelyOnePage ? "" : " compact-print") +
-            "\"><header class=\"summary-header\"><h3>" +
-            sanitize(data.identity.projectTitle || "Untitled Project") +
-            "</h3><p class=\"preview-meta\">" +
-            (identityMeta || "Fill in project identity fields") +
-            "</p></header><div class=\"print-grid\">" +
-            blocks.join("") +
-            "</div><p class=\"preview-meta\">Project " +
-            sanitize(String(index + 1)) +
-            " generated: " +
-            sanitize(data.meta.generatedAt || new Date().toLocaleString()) +
-            "</p></article>"
         );
-    });
+    }
 
-    previewEl.innerHTML = sheets.join("");
+    if (data.evidence.length) {
+        blocks.push(section("Evidence", sanitize(data.evidence.join(", ")), true));
+    }
+
+    const likelyOnePage = estimateContentLength(data) <= 2600;
+    const profileCorner = profileHtml(profile);
+
+    return (
+        "<article class=\"project-sheet" +
+        (likelyOnePage ? "" : " compact-print") +
+        "\"><header class=\"summary-header\"><div class=\"summary-top\"><div><h3>" +
+        sanitize(data.identity.projectTitle || "Untitled Project") +
+        "</h3><p class=\"preview-meta\">" +
+        (identityMeta || "Fill in project identity fields") +
+        "</p></div>" +
+        profileCorner +
+        "</div></header><div class=\"print-grid\">" +
+        blocks.join("") +
+        "</div></article>"
+    );
+}
+
+function renderPreview() {
+    const selectedProject = projects.find((project) => project.id === activeProjectId);
 
     if (selectedProject) {
+        previewEl.innerHTML = buildProjectSheetHtml(selectedProject.data, 1);
         printFitHint.textContent = "Previewing selected project. PDF export includes all saved projects in list order.";
-    } else if (projects.length) {
-        printFitHint.textContent = "Previewing first saved project. Select a card on the left to preview another.";
-    } else {
-        printFitHint.textContent = "No saved projects yet. Preview is showing the current draft.";
+        return;
     }
+
+    if (editorOpen) {
+        previewEl.innerHTML = buildProjectSheetHtml(collectData(), 1);
+        printFitHint.textContent = "Previewing current draft project. Save it to include in exports.";
+        return;
+    }
+
+    if (projects.length) {
+        previewEl.innerHTML = buildProjectSheetHtml(projects[0].data, 1);
+        printFitHint.textContent = "Previewing first saved project. Click Edit from a project card to modify it.";
+        return;
+    }
+
+    previewEl.innerHTML = "<p class=\"preview-meta\">No project selected. Click New Project to begin.</p>";
+    printFitHint.textContent = "No projects yet.";
 }
 
 function renderAllProjectsForPrint() {
@@ -380,116 +504,35 @@ function renderAllProjectsForPrint() {
         hint: printFitHint.textContent
     };
 
-    const allSheetsHtml = projects
-        .map((project, index) => {
-            const data = project.data;
-            const identityMeta = [
-                data.identity.courseCode,
-                data.identity.courseName,
-                data.identity.semester,
-                data.identity.projectType
-            ]
-                .filter(Boolean)
-                .map((item) => sanitize(item))
-                .join(" | ");
-
-            const blocks = [
-                section(
-                    "HKU Context",
-                    "Faculty: " + textOrPlaceholder(data.hkuContext.faculty) + "<br>Department: " + textOrPlaceholder(data.hkuContext.department)
-                ),
-                section(
-                    "Project Overview",
-                    "Problem statement:<br>" +
-                        textOrPlaceholder(data.narrative.problemStatement) +
-                        "<br><br>Objectives:<br>" +
-                        textOrPlaceholder(data.narrative.objectives) +
-                        "<br><br>Deliverables:<br>" +
-                        textOrPlaceholder(data.narrative.deliverables)
-                ),
-                section(
-                    "Personal Contribution",
-                    "Role: " +
-                        textOrPlaceholder(data.team.role) +
-                        "<br>Team size: " +
-                        textOrPlaceholder(data.team.teamSize) +
-                        "<br><br>Responsibilities:<br>" +
-                        textOrPlaceholder(data.contribution.responsibilities)
-                ),
-                section(
-                    "Technical Implementation",
-                    "Tools and stack: " +
-                        textOrPlaceholder(data.technical.tools) +
-                        "<br><br>Methods used:<br>" +
-                        textOrPlaceholder(data.technical.methods),
-                    true
-                ),
-                section(
-                    "Challenges and Outcomes",
-                    "Challenges faced:<br>" +
-                        textOrPlaceholder(data.narrative.challenges) +
-                        "<br><br>Mitigation:<br>" +
-                        textOrPlaceholder(data.narrative.mitigation) +
-                        "<br><br>Result summary:<br>" +
-                        textOrPlaceholder(data.narrative.results),
-                    true
-                )
-            ];
-
-            if (hasText(data.reflection.lessons) || hasText(data.reflection.futureImprovements)) {
-                blocks.push(
-                    section(
-                        "Reflection",
-                        "Lessons learned:<br>" +
-                            textOrPlaceholder(data.reflection.lessons) +
-                            "<br><br>Future improvements:<br>" +
-                            textOrPlaceholder(data.reflection.futureImprovements),
-                        true
-                    )
-                );
-            }
-
-            if (data.evidence.length) {
-                blocks.push(section("Evidence", sanitize(data.evidence.join(", ")), true));
-            }
-
-            const estimatedLength = estimateContentLength(data);
-            const likelyOnePage = estimatedLength <= 2600;
-
-            return (
-                "<article class=\"project-sheet" +
-                (likelyOnePage ? "" : " compact-print") +
-                "\"><header class=\"summary-header\"><h3>" +
-                sanitize(data.identity.projectTitle || "Untitled Project") +
-                "</h3><p class=\"preview-meta\">" +
-                (identityMeta || "Fill in project identity fields") +
-                "</p></header><div class=\"print-grid\">" +
-                blocks.join("") +
-                "</div><p class=\"preview-meta\">Project " +
-                sanitize(String(index + 1)) +
-                " generated: " +
-                sanitize(data.meta.generatedAt || new Date().toLocaleString()) +
-                "</p></article>"
-            );
-        })
-        .join("");
-
-    previewEl.innerHTML = allSheetsHtml;
+    previewEl.classList.toggle("split-pages", splitPagesToggle.checked);
+    previewEl.innerHTML = projects.map((project, index) => buildProjectSheetHtml(project.data, index + 1)).join("");
     printFitHint.textContent = "Preparing multi-page print preview for " + projects.length + " project(s).";
     window.print();
     previewEl.innerHTML = snapshot.html;
+    previewEl.classList.remove("split-pages");
     printFitHint.textContent = snapshot.hint;
 }
 
-function toTxt(data) {
-    return [
+function toTxt(data, profileData) {
+    const headerLines = [
         "HKU COURSE PROJECT SUMMARY",
         "Generated: " + data.meta.generatedAt,
         "",
+        "[PORTFOLIO HEADER - OPTIONAL]",
+        "Name: " + (profileData.name || ""),
+        "Email: " + (profileData.email || ""),
+        "Phone: " + (profileData.phone || ""),
+        "Contact Link: " + (profileData.link || ""),
+        ""
+    ];
+
+    return [
+        ...headerLines,
         "[PROJECT IDENTITY]",
         "Course Code: " + data.identity.courseCode,
         "Course Name: " + data.identity.courseName,
-        "Semester: " + data.identity.semester,
+        "Academic Year: " + data.identity.academicYear,
+        "Term: " + data.identity.term,
         "Project Type: " + data.identity.projectType,
         "Project Title: " + data.identity.projectTitle,
         "",
@@ -541,16 +584,88 @@ function toTxt(data) {
 }
 
 function toTxtAll(projectRecords) {
-    return projectRecords
+    const readable = projectRecords
         .map((project, index) => {
             return [
                 "==============================",
                 "PROJECT " + (index + 1),
                 "==============================",
-                toTxt(project.data)
+                toTxt(project.data, profile)
             ].join("\n");
         })
         .join("\n\n");
+
+    const machine = JSON.stringify({ version: 1, profile, projects: projectRecords }, null, 2);
+    return readable + "\n\n" + JSON_START + "\n" + machine + "\n" + JSON_END + "\n";
+}
+
+function parseImportedProjectsFromJson(txt) {
+    const start = txt.indexOf(JSON_START);
+    const end = txt.indexOf(JSON_END);
+    if (start < 0 || end < 0 || end <= start) {
+        return null;
+    }
+
+    const rawJson = txt.slice(start + JSON_START.length, end).trim();
+    const parsed = JSON.parse(rawJson);
+    if (!parsed || !Array.isArray(parsed.projects)) {
+        return null;
+    }
+
+    const importedProjects = parsed.projects
+        .map((project) => {
+            const safeData = project && project.data ? project.data : createEmptyData();
+            return buildProjectRecord(safeData, project.id || "");
+        })
+        .filter(Boolean);
+
+    return {
+        profile: parsed.profile || { name: "", email: "", phone: "", link: "" },
+        projects: importedProjects
+    };
+}
+
+function parseLegacyTxtProjects(txt) {
+    const chunks = txt
+        .split(/=+\s*\nPROJECT\s+\d+\s*\n=+\s*\n/g)
+        .map((chunk) => chunk.trim())
+        .filter(Boolean);
+
+    if (!chunks.length) {
+        return [];
+    }
+
+    return chunks.map((chunk) => {
+        const data = createEmptyData();
+        const lines = chunk.split(/\r?\n/);
+        const lineByPrefix = (prefix) => {
+            const line = lines.find((item) => item.startsWith(prefix));
+            return line ? line.slice(prefix.length).trim() : "";
+        };
+
+        data.identity.courseCode = lineByPrefix("Course Code:");
+        data.identity.courseName = lineByPrefix("Course Name:");
+        data.identity.academicYear = lineByPrefix("Academic Year:");
+        data.identity.term = lineByPrefix("Term:");
+        if (!data.identity.academicYear) {
+            const legacySemester = lineByPrefix("Semester:");
+            const match = legacySemester.match(/^(\d{4}-\d{2})\s+(Sem\s*1|Sem\s*2|Summer)$/i);
+            if (match) {
+                data.identity.academicYear = match[1];
+                data.identity.term = match[2].replace(/\s+/, " ");
+            }
+        }
+        data.identity.projectType = lineByPrefix("Project Type:");
+        data.identity.projectTitle = lineByPrefix("Project Title:");
+        data.hkuContext.faculty = lineByPrefix("Faculty:");
+        data.hkuContext.department = lineByPrefix("Department:");
+        data.team.role = lineByPrefix("Role:");
+        data.team.teamSize = lineByPrefix("Team Size:");
+        data.technical.tools = lineByPrefix("Tools and Stack:");
+        data.meta.generatedAt = lineByPrefix("Generated:") || new Date().toLocaleString();
+
+        return buildProjectRecord(data);
+    });
 }
 
 function download(filename, content, type) {
@@ -565,73 +680,86 @@ function download(filename, content, type) {
     URL.revokeObjectURL(url);
 }
 
+function persistSessionState() {
+    const snapshot = {
+        version: 1,
+        projects,
+        activeProjectId,
+        editorOpen,
+        splitPages: splitPagesToggle.checked,
+        profile: collectProfile(),
+        draft: editorOpen ? collectData() : createEmptyData()
+    };
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(snapshot));
+}
+
+function schedulePersistSessionState() {
+    if (persistTimer) {
+        clearTimeout(persistTimer);
+    }
+    persistTimer = setTimeout(() => {
+        persistSessionState();
+    }, 180);
+}
+
+function restoreSessionState() {
+    const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+    if (!raw) {
+        return;
+    }
+
+    try {
+        const parsed = JSON.parse(raw);
+        projects = Array.isArray(parsed.projects) ? parsed.projects : [];
+        activeProjectId = parsed.activeProjectId || "";
+        splitPagesToggle.checked = Boolean(parsed.splitPages);
+        setProfileFields(parsed.profile || { name: "", email: "", phone: "", link: "" });
+
+        const activeProject = projects.find((project) => project.id === activeProjectId);
+        if (activeProject) {
+            setFormData(activeProject.data);
+            setEditorOpen(Boolean(parsed.editorOpen), "Editing selected project.");
+        } else if (parsed.editorOpen && parsed.draft) {
+            setFormData(parsed.draft);
+            setEditorOpen(true, "Restored unsaved draft after refresh.");
+            activeProjectId = "";
+        } else {
+            clearFormFields();
+            setEditorOpen(false);
+            activeProjectId = "";
+        }
+
+        renderProjectList();
+        renderPreview();
+        clearError();
+        showStatus("Recovered previous session automatically.");
+    } catch (error) {
+        localStorage.removeItem(SESSION_STORAGE_KEY);
+    }
+}
+
 function runValidationOrShowErrors() {
     const data = collectData();
     const issues = validate(data);
 
     if (!issues.length) {
-        errorSummary.textContent = "";
+        clearError();
         return { valid: true, data };
     }
 
-    errorSummary.textContent = "Please fix: " + issues.join("; ");
+    showError("Please fix: " + issues.join("; "));
     return { valid: false, data };
 }
 
-function saveDraft() {
-    const payload = {
-        projects,
-        activeProjectId,
-        workingDraft: collectData()
-    };
-    localStorage.setItem(WORKSPACE_KEY, JSON.stringify(payload));
-    errorSummary.textContent = "Workspace saved locally.";
-}
-
-function loadDraft() {
-    const raw = localStorage.getItem(WORKSPACE_KEY);
-    if (!raw) {
-        errorSummary.textContent = "No saved workspace found.";
-        return;
-    }
-
-    try {
-        const payload = JSON.parse(raw);
-        projects = Array.isArray(payload.projects) ? payload.projects : [];
-        activeProjectId = payload.activeProjectId || "";
-
-        const activeProject = projects.find((project) => project.id === activeProjectId);
-        if (activeProject) {
-            setFormData(activeProject.data);
-            editorModeHint.textContent = "Editing selected project.";
-        } else if (payload.workingDraft) {
-            setFormData(payload.workingDraft);
-            activeProjectId = "";
-            editorModeHint.textContent = "Editing working draft.";
-        } else {
-            resetForm();
-        }
-
-        renderProjectList();
-        listEvidenceNames();
-        renderPreview();
-        errorSummary.textContent = "Workspace loaded. Evidence files cannot be restored for security reasons.";
-    } catch (err) {
-        errorSummary.textContent = "Could not read workspace data.";
-    }
-}
-
 function resetForm() {
-    form.reset();
+    clearFormFields();
     activeProjectId = "";
-    byId("faculty").value = "";
-    byId("department").value = "";
-    inferenceNote.textContent = "";
-    errorSummary.textContent = "";
-    evidenceList.innerHTML = "";
-    editorModeHint.textContent = "Editing working draft.";
+    setEditorOpen(false);
+    clearError();
+    showStatus("Editor closed.");
     renderProjectList();
     renderPreview();
+    schedulePersistSessionState();
 }
 
 function saveOrUpdateProject() {
@@ -643,62 +771,66 @@ function saveOrUpdateProject() {
     const existingIndex = projects.findIndex((project) => project.id === activeProjectId);
     if (existingIndex >= 0) {
         projects[existingIndex] = buildProjectRecord(outcome.data, activeProjectId);
-        errorSummary.textContent = "Project updated in collection.";
+        showStatus("Project updated in collection.");
     } else {
         const created = buildProjectRecord(outcome.data);
         projects.push(created);
         activeProjectId = created.id;
-        errorSummary.textContent = "Project added to collection.";
+        showStatus("Project added to collection.");
     }
 
+    setEditorOpen(false);
+    clearFormFields();
+    activeProjectId = "";
     renderProjectList();
     renderPreview();
+    schedulePersistSessionState();
 }
 
 function startNewProject() {
     activeProjectId = "";
-    form.reset();
-    byId("faculty").value = "";
-    byId("department").value = "";
-    inferenceNote.textContent = "";
-    evidenceList.innerHTML = "";
-    editorModeHint.textContent = "Creating a new project.";
+    clearFormFields();
+    setEditorOpen(true, "Creating a new project.");
     renderProjectList();
     renderPreview();
-    errorSummary.textContent = "Started a new project draft.";
+    clearError();
+    showStatus("Started a new project draft.");
+    schedulePersistSessionState();
+    byId("courseCode").focus();
 }
 
-function deleteSelectedProject() {
-    if (!activeProjectId) {
-        errorSummary.textContent = "Select a saved project to delete.";
+function deleteProjectById(projectId) {
+    const target = projects.find((project) => project.id === projectId);
+    const label = target ? (target.data.identity.projectTitle || target.data.identity.courseCode || "this project") : "this project";
+    if (!window.confirm("Delete " + label + "? This cannot be undone.")) {
         return;
     }
 
-    projects = projects.filter((project) => project.id !== activeProjectId);
-    activeProjectId = "";
-    form.reset();
-    byId("faculty").value = "";
-    byId("department").value = "";
-    inferenceNote.textContent = "";
-    evidenceList.innerHTML = "";
-    editorModeHint.textContent = "Creating a new project.";
+    projects = projects.filter((project) => project.id !== projectId);
+    if (activeProjectId === projectId) {
+        activeProjectId = "";
+        clearFormFields();
+        setEditorOpen(false);
+    }
     renderProjectList();
     renderPreview();
-    errorSummary.textContent = "Project deleted from collection.";
+    clearError();
+    showStatus("Project deleted from collection.");
+    schedulePersistSessionState();
 }
 
 function selectProjectById(projectId) {
     const project = projects.find((item) => item.id === projectId);
     if (!project) {
-        activeProjectId = "";
         return;
     }
 
     activeProjectId = projectId;
     setFormData(project.data);
-    editorModeHint.textContent = "Editing selected project.";
+    setEditorOpen(true, "Editing selected project.");
     renderProjectList();
     renderPreview();
+    schedulePersistSessionState();
 }
 
 function moveProject(draggedId, targetId) {
@@ -716,38 +848,109 @@ function moveProject(draggedId, targetId) {
     projects.splice(toIndex, 0, moved);
     renderProjectList();
     renderPreview();
-    errorSummary.textContent = "Project order updated.";
-}
-
-function applySample() {
-    const selected = byId("sampleCourse").value;
-    if (!selected || !SAMPLE_COURSES[selected]) {
-        return;
-    }
-
-    const preset = SAMPLE_COURSES[selected];
-    byId("courseCode").value = preset.courseCode;
-    byId("courseName").value = preset.courseName;
-    byId("projectType").value = preset.projectType;
-    inferFromCourseCode(preset.courseCode);
-    renderPreview();
+    clearError();
+    showStatus("Project order updated.");
+    schedulePersistSessionState();
 }
 
 byId("courseCode").addEventListener("input", (event) => {
     inferFromCourseCode(event.target.value);
-    renderPreview();
+    if (editorOpen) {
+        renderPreview();
+    }
+    schedulePersistSessionState();
 });
 
-form.addEventListener("input", renderPreview);
+byId("projectType").addEventListener("change", () => {
+    updateTeamFieldVisibility();
+    if (editorOpen) {
+        renderPreview();
+    }
+    schedulePersistSessionState();
+});
+
+form.addEventListener("input", () => {
+    if (editorOpen) {
+        renderPreview();
+    }
+    schedulePersistSessionState();
+});
+
 evidenceInput.addEventListener("change", () => {
     listEvidenceNames();
-    renderPreview();
+    if (editorOpen) {
+        renderPreview();
+    }
+    schedulePersistSessionState();
 });
 
-byId("applySample").addEventListener("click", applySample);
 byId("newProject").addEventListener("click", startNewProject);
 byId("saveProject").addEventListener("click", saveOrUpdateProject);
-byId("cancelEdit").addEventListener("click", startNewProject);
+byId("cancelEdit").addEventListener("click", resetForm);
+byId("resetForm").addEventListener("click", () => {
+    clearFormFields();
+    if (editorOpen) {
+        renderPreview();
+    }
+    showStatus("Editor fields reset.");
+    schedulePersistSessionState();
+});
+
+[profileNameInput, profileEmailInput, profilePhoneInput, profileLinkInput].forEach((input) => {
+    input.addEventListener("input", () => {
+        profile = collectProfile();
+        renderPreview();
+        schedulePersistSessionState();
+    });
+});
+
+splitPagesToggle.addEventListener("change", schedulePersistSessionState);
+
+byId("importProjects").addEventListener("click", () => {
+    importTxtInput.value = "";
+    importTxtInput.click();
+});
+
+importTxtInput.addEventListener("change", () => {
+    const file = importTxtInput.files && importTxtInput.files[0];
+    if (!file) {
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+        try {
+            const txt = String(reader.result || "");
+            let importedCollection = parseImportedProjectsFromJson(txt);
+            let importedProjects = [];
+
+            if (importedCollection && importedCollection.projects && importedCollection.projects.length) {
+                importedProjects = importedCollection.projects;
+                setProfileFields(importedCollection.profile);
+            } else {
+                importedProjects = parseLegacyTxtProjects(txt);
+            }
+
+            if (!importedProjects.length) {
+                showError("Could not find importable projects in this TXT file.");
+                return;
+            }
+
+            projects = importedProjects;
+            activeProjectId = "";
+            clearFormFields();
+            setEditorOpen(false);
+            renderProjectList();
+            renderPreview();
+            clearError();
+            showStatus("Imported " + importedProjects.length + " project(s) from TXT.");
+            schedulePersistSessionState();
+        } catch (error) {
+            showError("Import failed: invalid TXT format.");
+        }
+    };
+    reader.readAsText(file);
+});
 
 projectList.addEventListener("click", (event) => {
     const menuButton = event.target.closest("[data-action]");
@@ -759,11 +962,11 @@ projectList.addEventListener("click", (event) => {
         const projectId = item.getAttribute("data-id");
         if (menuButton.getAttribute("data-action") === "edit") {
             selectProjectById(projectId);
-            errorSummary.textContent = "Loaded project for editing.";
+            clearError();
+            showStatus("Loaded project for editing.");
         }
         if (menuButton.getAttribute("data-action") === "delete") {
-            activeProjectId = projectId;
-            deleteSelectedProject();
+            deleteProjectById(projectId);
         }
         const parentDetails = menuButton.closest("details");
         if (parentDetails) {
@@ -773,13 +976,44 @@ projectList.addEventListener("click", (event) => {
         return;
     }
 
+    const menuArea = event.target.closest(".item-menu");
+    if (menuArea) {
+        // Keep card selection logic from rerendering while user is opening/using the 3-dot menu.
+        event.stopPropagation();
+        return;
+    }
+
     const item = event.target.closest(".project-item");
     if (!item) {
         return;
     }
     const projectId = item.getAttribute("data-id");
-    selectProjectById(projectId);
-    errorSummary.textContent = "Loaded saved project into editor.";
+    activeProjectId = projectId;
+    renderProjectList();
+    renderPreview();
+    clearError();
+    showStatus("Selected project for preview.");
+    schedulePersistSessionState();
+});
+
+projectList.addEventListener("keydown", (event) => {
+    const item = event.target.closest(".project-item");
+    if (!item) {
+        return;
+    }
+
+    if (event.key !== "Enter" && event.key !== " ") {
+        return;
+    }
+
+    event.preventDefault();
+    const projectId = item.getAttribute("data-id");
+    activeProjectId = projectId;
+    renderProjectList();
+    renderPreview();
+    clearError();
+    showStatus("Selected project for preview.");
+    schedulePersistSessionState();
 });
 
 projectList.addEventListener("dragstart", (event) => {
@@ -818,45 +1052,47 @@ projectList.addEventListener("dragend", () => {
     });
 });
 
-byId("saveWorkspace").addEventListener("click", saveDraft);
-byId("loadWorkspace").addEventListener("click", loadDraft);
-byId("resetForm").addEventListener("click", resetForm);
-
 byId("exportTxt").addEventListener("click", () => {
-    if (projects.length) {
-        const txtAll = toTxtAll(projects);
-        download("hku-project-collection.txt", txtAll, "text/plain;charset=utf-8");
-        errorSummary.textContent = "Exported TXT for all saved projects.";
+    if (!projects.length) {
+        showError("No saved projects to export. Create and save at least one project first.");
         return;
     }
 
-    const outcome = runValidationOrShowErrors();
-    if (!outcome.valid) {
-        return;
-    }
-
-    const txt = toTxt(outcome.data);
-    const codePart = outcome.data.identity.courseCode || "HKU";
-    download(codePart + "-project-summary.txt", txt, "text/plain;charset=utf-8");
-    errorSummary.textContent = "Exported TXT for current draft project.";
+    const txtAll = toTxtAll(projects);
+    download("hku-project-collection.txt", txtAll, "text/plain;charset=utf-8");
+    clearError();
+    showStatus("Exported TXT for all saved projects.");
 });
 
 byId("exportPdf").addEventListener("click", () => {
-    if (projects.length) {
-        errorSummary.textContent = "Opening print dialog for all saved projects...";
-        renderAllProjectsForPrint();
+    if (!projects.length) {
+        showError("No saved projects to export. Create and save at least one project first.");
         return;
     }
 
-    if (!projects.length) {
-        const outcome = runValidationOrShowErrors();
-        if (!outcome.valid) {
-            return;
-        }
-    }
-    errorSummary.textContent = "Opening print dialog for PDF export...";
-    window.print();
+    clearError();
+    showStatus("Opening print dialog for all saved projects...");
+    renderAllProjectsForPrint();
 });
 
-renderProjectList();
-resetForm();
+themeToggle.addEventListener("click", () => {
+    const current = document.documentElement.getAttribute("data-theme") || "light";
+    const next = current === "dark" ? "light" : "dark";
+    applyTheme(next);
+    localStorage.setItem(THEME_STORAGE_KEY, next);
+    showStatus("Theme set to " + next + " mode.");
+});
+
+window.addEventListener("beforeunload", persistSessionState);
+
+window.addEventListener("beforeunload", persistSessionState);
+
+setEditorOpen(false);
+setProfileFields({ name: "", email: "", phone: "", link: "" });
+updateTeamFieldVisibility();
+initializeTheme();
+restoreSessionState();
+if (!projects.length && !editorOpen) {
+    renderProjectList();
+    renderPreview();
+}
