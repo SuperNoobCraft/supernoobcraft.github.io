@@ -392,7 +392,15 @@ function setupWelcomeModal() {
 function applyTheme(themeName) {
     document.documentElement.setAttribute("data-theme", themeName);
     document.documentElement.style.colorScheme = themeName;
-    themeToggle.textContent = themeName === "dark" ? "Light mode" : "Dark mode";
+    if (themeToggle) {
+        const isDark = themeName === "dark";
+        themeToggle.innerHTML = isDark
+            ? '<i class="fas fa-sun" aria-hidden="true"></i>'
+            : '<i class="fas fa-moon" aria-hidden="true"></i>';
+        const nextLabel = isDark ? "Switch to light mode" : "Switch to dark mode";
+        themeToggle.setAttribute("aria-label", nextLabel);
+        themeToggle.setAttribute("title", nextLabel);
+    }
 }
 
 function initializeTheme() {
@@ -1556,6 +1564,7 @@ function projectCardTemplate(project, index) {
     const name = sanitize(project.data.identity.courseName || "No course name");
     const updated = sanitize(new Date(project.updatedAt || Date.now()).toLocaleString());
     const activeClass = project.id === activeProjectId ? " active" : "";
+    const menuLabel = sanitize("Open actions for " + (project.data.identity.projectTitle || project.data.identity.courseCode || "this project"));
 
     return (
         "<li class=\"project-item" +
@@ -1565,7 +1574,7 @@ function projectCardTemplate(project, index) {
         "\" draggable=\"true\" tabindex=\"0\" role=\"button\" aria-label=\"Preview project " +
         sanitize(String(index + 1)) +
         "\">" +
-        "<button type=\"button\" class=\"drag-handle\" aria-label=\"Drag to reorder\">drag</button>" +
+        "<button type=\"button\" class=\"drag-handle\" aria-label=\"Drag project to reorder\" title=\"Drag project to reorder\">drag</button>" +
         "<div class=\"project-item-main\">" +
         "<p class=\"project-item-title\">" +
         code +
@@ -1579,7 +1588,11 @@ function projectCardTemplate(project, index) {
         "<br>Order: " +
         sanitize(String(index + 1)) +
         "</p></div>" +
-        "<details class=\"item-menu\"><summary>...</summary>" +
+        "<details class=\"item-menu\"><summary aria-label=\"" +
+        menuLabel +
+        "\" title=\"" +
+        menuLabel +
+        "\">...</summary>" +
         "<div class=\"item-menu-panel\">" +
         "<button type=\"button\" data-action=\"edit\">Edit</button>" +
         "<button type=\"button\" data-action=\"save-preset\">Save as preset</button>" +

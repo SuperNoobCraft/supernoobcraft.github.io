@@ -39,6 +39,18 @@
     const THEME_KEY = "hkuProjectToolThemeV1";
     let currentTheme = "light";
 
+    function updateThemeToggleButton(theme) {
+        if (!toggleButton) {
+            return;
+        }
+        const isDark = theme === "dark";
+        toggleButton.innerHTML = isDark
+            ? '<i class="fa-solid fa-sun" aria-hidden="true"></i>'
+            : '<i class="fa-solid fa-moon" aria-hidden="true"></i>';
+        toggleButton.setAttribute("aria-label", isDark ? "Switch to light mode" : "Switch to dark mode");
+        toggleButton.setAttribute("title", isDark ? "Switch to light mode" : "Switch to dark mode");
+    }
+
     const getTheme = () => {
         try {
             return localStorage.getItem(THEME_KEY) || "light";
@@ -54,9 +66,7 @@
         currentTheme = theme;
         document.documentElement.setAttribute("data-theme", theme);
         document.documentElement.style.colorScheme = theme;
-        if (toggleButton) {
-            toggleButton.textContent = theme === "dark" ? "Light mode" : "Dark mode";
-        }
+        updateThemeToggleButton(theme);
     };
 
     function initThemeToggle() {
@@ -71,7 +81,7 @@
         document.documentElement.setAttribute("data-theme", currentTheme);
         document.documentElement.style.colorScheme = currentTheme;
         if (toggleButton) {
-            toggleButton.textContent = currentTheme === "dark" ? "Light mode" : "Dark mode";
+            updateThemeToggleButton(currentTheme);
             toggleButton.addEventListener("click", function () {
                 const newTheme = getTheme() === "dark" ? "light" : "dark";
                 setTheme(newTheme);

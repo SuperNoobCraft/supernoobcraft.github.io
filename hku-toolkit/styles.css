@@ -784,6 +784,13 @@ button:focus {
     outline-offset: 1px;
 }
 
+a:focus,
+summary:focus,
+.project-item:focus {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+}
+
 .caption-input-group {
     flex: 1;
     min-width: 200px;

@@ -9,9 +9,16 @@
             rel="stylesheet"
             href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap"
         />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+        />
         <link rel="stylesheet" href="styles.css" />
     </head>
     <body>
+        <a class="skip-link" href="#main-content">Skip to main content</a>
         <header class="topbar">
             <div class="brand-group">
                 <details class="site-switcher">
@@ -38,10 +45,12 @@
                 <a href="about.html">About</a>
                 <a href="help.html" aria-current="page">Help</a>
                 <a href="privacy.html">Privacy</a>
-                <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Toggle color theme">Dark mode</button>
+                <button type="button" id="themeToggle" class="icon-toggle-btn" aria-label="Switch to dark mode" title="Switch to dark mode">
+                    <i class="fas fa-moon" aria-hidden="true"></i>
+                </button>
             </nav>
         </header>
-        <main class="card page-content-card">
+        <main class="card page-content-card" id="main-content">
             <h1>Help</h1>
             <p>
                 This tool helps you build a multi-project HKU portfolio, reorder projects, and export to ZIP or PDF.

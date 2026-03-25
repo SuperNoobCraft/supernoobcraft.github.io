@@ -69,7 +69,13 @@
         if (!button) {
             return;
         }
-        button.textContent = getCurrentTheme() === "dark" ? "Light mode" : "Dark mode";
+        const isDark = getCurrentTheme() === "dark";
+        button.innerHTML = isDark
+            ? '<i class="fas fa-sun" aria-hidden="true"></i>'
+            : '<i class="fas fa-moon" aria-hidden="true"></i>';
+        const nextLabel = isDark ? "Switch to light mode" : "Switch to dark mode";
+        button.setAttribute("aria-label", nextLabel);
+        button.setAttribute("title", nextLabel);
     }
 
     function initThemeToggle(button) {
