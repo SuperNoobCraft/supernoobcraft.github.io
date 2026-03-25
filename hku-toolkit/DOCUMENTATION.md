@@ -8,7 +8,7 @@ Browser compatibility statement: This website is designed to run on major deskto
 
 This project is an HKU-related, user-centered web tool that helps students document academic projects in a structured and exportable way. The main theme is academic and professional portfolio building in a university context. Many students complete substantial coursework and project-based assignments, but their evidence is often scattered across notebooks, slide decks, chat threads, and old files. This creates a practical problem when they need to prepare internship applications, exchange applications, capstone reflections, or portfolio summaries in a short time.
 
-The website aims to solve this by offering a lightweight documentation workflow that does not depend on account registration or a backend system. Users can create multiple project entries, edit them over time, reorder them, and export the full collection to TXT or PDF for submission and reuse.
+The website aims to solve this by offering a lightweight documentation workflow that does not depend on account registration or a backend system. Users can create multiple project entries, edit them over time, reorder them, and export the full collection as a ZIP bundle (for backup and transfer) or PDF (for submission and review).
 
 The goals of the website are:
 
@@ -22,7 +22,7 @@ The website is intentionally scoped for coursework constraints and practical use
 
 Screenshot placeholder (annotated):
 - Figure 1. Homepage layout showing left project collection panel and right live preview.
-- Suggested annotation points: top navigation, New Project button, card list, preview panel, theme toggle.
+- Suggested annotation points: top navigation, New Project button, card list, preview panel, per-item theme controls.
 - Insert image path here after capture: [Figure 1 image link]
 
 ## Target Users and User Needs Assessment
@@ -156,10 +156,13 @@ Usability decisions were guided by common web usability principles such as visib
 5. Reordering via drag interactions.
 	Drag-and-drop ordering aligns with common list organization behavior and supports portfolio storytelling needs.
 
-6. Autosave and session recovery.
+6. Per-item visual theming for clearer exports.
+	Users can assign a theme to the portfolio header and each project item independently, helping related projects stand out while preserving a cohesive final document.
+
+7. Autosave and session recovery.
 	Local persistence reduces frustration caused by accidental refresh or tab closure.
 
-7. Status feedback and error messages.
+8. Status feedback and error messages.
 	A live status area and inline error summaries provide direct feedback after user actions.
 
 ### How user needs informed these decisions
@@ -199,7 +202,7 @@ Accessibility was considered as a first-order requirement rather than a post-hoc
 	Status and error messaging uses live regions for immediate non-visual feedback.
 
 6. Color-theme flexibility.
-	Light and dark modes support different viewing environments and visual comfort needs.
+	Light and dark modes support app-level viewing comfort, while preview/export uses item-level theme styling with a light-default baseline for print consistency.
 
 7. Responsive behavior.
 	The layout adapts to narrow viewports to preserve readability and interaction targets.
@@ -264,7 +267,7 @@ Screenshot placeholder (annotated):
 	Users may lose data if site storage is cleared unintentionally.
 
 4. Export customization is basic.
-	Users cannot yet choose multiple export templates or output styles.
+	Users can choose per-item themes, but advanced user-defined presets and versioned style profiles are not yet available.
 
 5. Evidence file handling has browser constraints.
 	File input binaries are not persistable across refresh in standard browser security models.

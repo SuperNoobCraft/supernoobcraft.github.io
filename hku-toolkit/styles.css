@@ -455,6 +455,10 @@ legend {
     margin: 0;
 }
 
+.inline-toggle-offset {
+    margin-left: 1.2rem;
+}
+
 .profile-box {
     margin-bottom: 0.75rem;
 }
@@ -669,12 +673,54 @@ button:focus {
     outline-offset: 1px;
 }
 
+.caption-input-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.caption-input {
+    font-size: 0.85rem !important;
+    padding: 0.4rem 0.5rem !important;
+    background: var(--surface-soft) !important;
+}
+
+.evidence-captions-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+#evidenceCaptions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
 .inline-group {
     margin-top: 0.7rem;
     display: grid;
     grid-template-columns: 180px 1fr auto;
     gap: 0.6rem;
     align-items: center;
+}
+
+.display-theme-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.7rem;
+    align-items: end;
+}
+
+.theme-compact {
+    min-width: 168px;
+    max-width: 210px;
+}
+
+.theme-compact select {
+    width: auto;
+    min-width: 168px;
+    max-width: 210px;
+    justify-self: start;
 }
 
 .file-list {
@@ -720,18 +766,27 @@ button.primary:hover {
 }
 
 .preview-document {
+    --preview-surface: #ffffff;
+    --preview-surface-soft-2: #f8fbff;
+    --preview-text: #1f2a37;
+    --preview-muted: #546273;
+    --preview-line: #cfdae5;
+    --preview-line-soft: #d7e2ea;
+    --preview-line-soft-2: #d9e3eb;
+    --preview-strong: #115c8d;
     border: 1px dashed var(--line);
     border-radius: 12px;
     padding: 0.95rem;
-    background: var(--surface);
+    background: var(--preview-surface);
+    color: var(--preview-text);
     max-height: 78vh;
     overflow: auto;
 }
 
 .preview-document h3 {
     margin: 0.9rem 0 0.35rem;
-    color: var(--strong);
-    border-bottom: 1px solid var(--line);
+    color: var(--preview-strong);
+    border-bottom: 1px solid var(--preview-line);
     padding-bottom: 0.2rem;
 }
 
@@ -764,22 +819,30 @@ button.primary:hover {
 .profile-corner {
     text-align: right;
     font-size: 0.78rem;
-    color: var(--muted);
+    color: var(--item-muted, var(--preview-muted));
     line-height: 1.3;
     max-width: 220px;
 }
 
 .portfolio-header {
-    border: 1px solid var(--line-soft);
+    border: 1px solid var(--item-line-soft, var(--preview-line-soft));
     border-radius: 12px;
     padding: 0.75rem 0.8rem;
     margin-bottom: 0.75rem;
-    background: var(--surface);
+    background: linear-gradient(
+        135deg,
+        var(--item-surface, var(--preview-surface)) 0%,
+        color-mix(
+            in srgb,
+            var(--item-strong, var(--preview-strong)) 8%,
+            var(--item-surface, var(--preview-surface)) 92%
+        ) 100%
+    );
 }
 
 .portfolio-header-name {
     margin: 0;
-    color: var(--strong);
+    color: var(--item-strong, var(--preview-strong));
     font-size: 1.18rem;
     font-weight: 800;
     line-height: 1.2;
@@ -787,17 +850,18 @@ button.primary:hover {
 
 .portfolio-header-meta {
     margin: 0.3rem 0 0;
-    color: var(--muted);
+    color: var(--item-muted, var(--preview-muted));
     font-size: 0.86rem;
     line-height: 1.35;
 }
 
 .project-sheet {
-    border: 1px solid var(--line-soft);
+    border: 1px solid var(--item-line-soft, var(--preview-line-soft));
     border-radius: 12px;
     padding: 0.75rem;
     margin-bottom: 0.8rem;
-    background: var(--surface);
+    background: var(--item-surface, var(--preview-surface));
+    box-shadow: inset 4px 0 0 color-mix(in srgb, var(--item-strong, var(--preview-strong)) 30%, transparent);
 }
 
 .project-sheet:last-child {
@@ -818,10 +882,14 @@ button.primary:hover {
 }
 
 .summary-section {
-    border: 1px solid var(--line-soft-2);
+    border: 1px solid var(--item-line-soft-2, var(--preview-line-soft-2));
     border-radius: 10px;
     padding: 0.5rem 0.55rem;
-    background: var(--surface);
+    background: color-mix(
+        in srgb,
+        var(--item-surface, var(--preview-surface)) 94%,
+        var(--item-strong, var(--preview-strong)) 6%
+    );
 }
 
 .summary-section h3 {
@@ -829,6 +897,9 @@ button.primary:hover {
     font-size: 0.95rem;
     border: none;
     padding: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--item-strong, var(--preview-strong));
 }
 
 .summary-section .summary-body {
@@ -847,15 +918,90 @@ button.primary:hover {
     width: 100%;
     max-height: 180px;
     object-fit: contain;
-    border: 1px solid var(--line-soft);
+    border: 1px solid var(--item-line-soft, var(--preview-line-soft));
     border-radius: 8px;
-    background: var(--surface-soft-2);
+    background: var(--item-surface-soft-2, var(--preview-surface-soft-2));
+}
+
+.evidence-figure {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.evidence-caption {
+    font-size: 0.8rem;
+    color: var(--item-muted, var(--preview-muted));
+    line-height: 1.3;
+    padding: 0.3rem 0.2rem;
+    text-align: center;
+    word-break: break-word;
 }
 
 .preview-meta {
     font-family: "IBM Plex Mono", monospace;
-    color: var(--muted);
+    color: var(--item-muted, var(--preview-muted));
     font-size: 0.85rem;
+}
+
+.portfolio-header[data-item-theme="academic"] .portfolio-header-name,
+.project-sheet[data-item-theme="academic"] .summary-header h3,
+.project-sheet[data-item-theme="academic"] .summary-section h3 {
+    font-family: "Georgia", "Times New Roman", serif;
+    text-transform: none;
+    letter-spacing: 0.01em;
+}
+
+.project-sheet[data-item-theme="academic"] {
+    box-shadow: inset 6px 0 0 color-mix(in srgb, var(--item-strong, var(--strong)) 45%, transparent);
+}
+
+.project-sheet[data-item-theme="tech"],
+.project-sheet[data-item-theme="tech"] .summary-section {
+    border-radius: 4px;
+}
+
+.project-sheet[data-item-theme="tech"] .summary-section h3 {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.88rem;
+    letter-spacing: 0.06em;
+}
+
+.project-sheet[data-item-theme="tech"] .evidence-image-grid img {
+    border-width: 2px;
+}
+
+.project-sheet[data-item-theme="minimalist"] {
+    box-shadow: none;
+    border-radius: 6px;
+}
+
+.project-sheet[data-item-theme="minimalist"] .summary-section {
+    background: var(--item-surface, var(--surface));
+    border-style: solid;
+}
+
+.portfolio-header[data-item-theme="artistic"] .portfolio-header-name,
+.project-sheet[data-item-theme="artistic"] .summary-header h3,
+.project-sheet[data-item-theme="artistic"] .summary-section h3 {
+    font-style: italic;
+}
+
+.project-sheet[data-item-theme="science"] .summary-section {
+    border-style: dashed;
+}
+
+.project-sheet[data-item-theme="outdoor"] {
+    box-shadow: inset 4px 0 0 color-mix(in srgb, var(--item-strong, var(--strong)) 38%, transparent);
+}
+
+.project-sheet[data-item-theme="print"],
+.project-sheet[data-item-theme="print"] .summary-section,
+.portfolio-header[data-item-theme="print"] {
+    background: #fff;
+    box-shadow: none;
 }
 
 .footer-note {
@@ -954,6 +1100,22 @@ button.primary:hover {
         grid-template-columns: 1fr;
     }
 
+    .display-theme-row {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+    }
+
+    .theme-compact,
+    .theme-compact select {
+        min-width: 0;
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .inline-toggle-offset {
+        margin-left: 0;
+    }
+
     .print-grid {
         grid-template-columns: 1fr;
     }
@@ -1035,6 +1197,36 @@ button.primary:hover {
         padding: 0;
     }
 
+    .skills-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .skills-list li {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.3rem 0.6rem;
+        background: var(--pill-bg);
+        border: 1px solid var(--pill-border);
+        border-radius: 20px;
+        font-size: 0.85rem;
+        color: var(--pill-text);
+    }
+
+    .skill-badge {
+        font-size: 0.75rem;
+        font-weight: 700;
+        background: var(--strong);
+        color: var(--surface);
+        padding: 0.15rem 0.35rem;
+        border-radius: 10px;
+        margin-left: 0.2rem;
+    }
     .preview-document {
         border: none;
         max-height: none;
@@ -1048,11 +1240,20 @@ button.primary:hover {
     }
 
     .portfolio-header {
-        border: 1px solid #d8d8d8;
+        border: 1px solid var(--item-line-soft, var(--line-soft));
         border-radius: 6px;
         padding: 0.35rem 0.45rem;
         margin: 0 0 3mm;
         break-after: avoid;
+        background: linear-gradient(
+            135deg,
+            var(--item-surface, var(--surface)) 0%,
+            color-mix(
+                in srgb,
+                var(--item-strong, var(--strong)) 8%,
+                var(--item-surface, var(--surface)) 92%
+            ) 100%
+        );
     }
 
     .portfolio-header-name {
@@ -1064,12 +1265,14 @@ button.primary:hover {
     }
 
     .project-sheet {
-        border: none;
-        border-radius: 0;
-        padding: 0;
+        border: 1px solid var(--item-line-soft, var(--line-soft));
+        border-radius: 6px;
+        padding: 0.35rem;
         margin: 0 0 4mm;
         break-inside: avoid-page;
         page-break-inside: avoid;
+        background: var(--item-surface, var(--surface));
+        box-shadow: inset 3px 0 0 color-mix(in srgb, var(--item-strong, var(--strong)) 30%, transparent);
     }
 
     .preview-document.split-pages .project-sheet {
@@ -1112,11 +1315,16 @@ button.primary:hover {
     }
 
     .summary-section {
-        border: 1px solid #d8d8d8;
+        border: 1px solid var(--item-line-soft-2, var(--line-soft-2));
         border-radius: 6px;
         padding: 0.3rem 0.35rem;
         break-inside: avoid;
         page-break-inside: avoid;
+        background: color-mix(
+            in srgb,
+            var(--item-surface, var(--surface)) 94%,
+            var(--item-strong, var(--strong)) 6%
+        );
     }
 
     .summary-section h3 {
@@ -1136,9 +1344,10 @@ button.primary:hover {
     }
 
     .evidence-image-grid img {
-        border: 1px solid #d8d8d8;
+        border: 1px solid var(--item-line-soft, var(--line-soft));
         border-radius: 4px;
         max-height: 35mm;
+        background: var(--item-surface-soft-2, var(--surface-soft-2));
     }
 
     .project-sheet.compact-print .summary-section.optional {

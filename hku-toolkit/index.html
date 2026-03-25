@@ -79,18 +79,32 @@
                                 Contact link
                                 <input id="profileLink" name="profileLink" placeholder="linkedin.com/in/..." />
                             </label>
-                            <label class="full">
-                                Personal info display
-                                <div id="profileDisplayToggle" class="mode-segment" role="group" aria-label="Personal info display mode">
-                                    <button type="button" id="profileModeEach" class="mode-segment-btn is-active" data-mode="per-project" aria-pressed="true">
-                                        Each project
-                                    </button>
-                                    <button type="button" id="profileModeTop" class="mode-segment-btn" data-mode="top-once" aria-pressed="false">
-                                        Top only
-                                    </button>
-                                </div>
-                                <input id="profileDisplayMode" name="profileDisplayMode" type="hidden" value="per-project" />
-                            </label>
+                            <div class="full display-theme-row">
+                                <label>
+                                    Personal info display
+                                    <div id="profileDisplayToggle" class="mode-segment" role="group" aria-label="Personal info display mode">
+                                        <button type="button" id="profileModeEach" class="mode-segment-btn is-active" data-mode="per-project" aria-pressed="true">
+                                            Each project
+                                        </button>
+                                        <button type="button" id="profileModeTop" class="mode-segment-btn" data-mode="top-once" aria-pressed="false">
+                                            Top only
+                                        </button>
+                                    </div>
+                                    <input id="profileDisplayMode" name="profileDisplayMode" type="hidden" value="per-project" />
+                                </label>
+                                <label class="theme-compact">
+                                    Header theme
+                                    <select id="profileTheme" name="profileTheme">
+                                        <option value="academic" selected>Academic</option>
+                                        <option value="tech">Tech</option>
+                                        <option value="artistic">Artistic</option>
+                                        <option value="science">Science</option>
+                                        <option value="outdoor">Outdoor</option>
+                                        <option value="minimalist">Minimalist</option>
+                                        <option value="print">Print</option>
+                                    </select>
+                                </label>
+                            </div>
                         </div>
                     </fieldset>
 
@@ -120,6 +134,11 @@
                     <label class="inline-toggle" for="splitPagesToggle">
                         <input id="splitPagesToggle" type="checkbox" checked />
                         Each project on individual page
+                    </label>
+
+                    <label class="inline-toggle inline-toggle-offset" for="includeSkillsToggle">
+                        <input id="includeSkillsToggle" type="checkbox" checked />
+                        Include skills summary in export
                     </label>
 
                     <p id="noProjectsState" class="empty-state">No projects yet. Click New Project to get started.</p>
@@ -176,6 +195,10 @@
                                     <option>Summer</option>
                                 </select>
                             </label>
+                            <label class="full">
+                                <span class="label-title">Project title <span class="required-mark" aria-hidden="true">*</span></span>
+                                <input id="projectTitle" name="projectTitle" required placeholder="Smart Study Planner" />
+                            </label>
                             <label>
                                 <span class="label-title">Project type <span class="required-mark" aria-hidden="true">*</span></span>
                                 <select id="projectType" name="projectType" required>
@@ -187,9 +210,17 @@
                                     <option>Research Project</option>
                                 </select>
                             </label>
-                            <label class="full">
-                                <span class="label-title">Project title <span class="required-mark" aria-hidden="true">*</span></span>
-                                <input id="projectTitle" name="projectTitle" required placeholder="Smart Study Planner" />
+                            <label class="theme-compact">
+                                Item theme
+                                <select id="projectTheme" name="projectTheme">
+                                    <option value="academic">Academic</option>
+                                    <option value="tech" selected>Tech</option>
+                                    <option value="artistic">Artistic</option>
+                                    <option value="science">Science</option>
+                                    <option value="outdoor">Outdoor</option>
+                                    <option value="minimalist">Minimalist</option>
+                                    <option value="print">Print</option>
+                                </select>
                             </label>
                         </div>
                     </fieldset>
@@ -289,6 +320,10 @@
                         </label>
                         <small>Images are stored locally in your browser for this site and included in ZIP bundle export/import.</small>
                         <ul id="evidenceList" class="file-list"></ul>
+                        <div id="evidenceCaptionsSection" class="evidence-captions-section" style="display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+                            <p><strong>Add captions to evidence files (optional)</strong></p>
+                            <div id="evidenceCaptions"></div>
+                        </div>
                     </fieldset>
 
                     <p id="errorSummary" class="error-summary" role="alert" aria-live="polite"></p>
@@ -308,7 +343,6 @@
                 <article id="preview" class="preview-document"></article>
             </section>
         </main>
-
         <div id="welcomeModal" class="modal-backdrop is-hidden" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
             <section class="modal-card">
                 <h2 id="welcomeTitle">Quick Start Guide</h2>

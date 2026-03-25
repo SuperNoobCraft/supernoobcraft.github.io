@@ -64,6 +64,8 @@ const previewEl = document.getElementById("preview");
 const errorSummary = document.getElementById("errorSummary");
 const evidenceInput = document.getElementById("evidence");
 const evidenceList = document.getElementById("evidenceList");
+const evidenceCaptionsSection = document.getElementById("evidenceCaptionsSection");
+const evidenceCaptions = document.getElementById("evidenceCaptions");
 const inferenceNote = document.getElementById("inferenceNote");
 const printFitHint = document.getElementById("printFitHint");
 const projectList = document.getElementById("projectList");
@@ -76,11 +78,13 @@ const importBundleZipBtn = document.getElementById("importBundleZip");
 const exportBundleZipBtn = document.getElementById("exportBundleZip");
 const teamFields = document.getElementById("teamFields");
 const splitPagesToggle = document.getElementById("splitPagesToggle");
+const includeSkillsToggle = document.getElementById("includeSkillsToggle");
 const sortProjectsSelect = document.getElementById("sortProjects");
 const profileNameInput = document.getElementById("profileName");
 const profileEmailInput = document.getElementById("profileEmail");
 const profilePhoneInput = document.getElementById("profilePhone");
 const profileLinkInput = document.getElementById("profileLink");
+const profileThemeSelect = document.getElementById("profileTheme");
 const profileDisplayModeInput = document.getElementById("profileDisplayMode");
 const profileDisplayToggle = document.getElementById("profileDisplayToggle");
 const profileModeEach = document.getElementById("profileModeEach");
@@ -96,7 +100,7 @@ let projects = [];
 let activeProjectId = "";
 let draggingProjectId = "";
 let editorOpen = false;
-let profile = { name: "", email: "", phone: "", link: "", displayMode: "per-project" };
+let profile = { name: "", email: "", phone: "", link: "", displayMode: "per-project", theme: "academic" };
 let persistTimer = null;
 let projectAutoSaveTimer = null;
 let autosaveTicker = null;
@@ -105,8 +109,79 @@ let lastSavedAt = 0;
 let lastDeletedProjectSnapshot = null;
 const evidencePreviewUrlsByProjectId = new Map();
 let draftEvidencePreviewUrls = [];
+let draftEvidenceCaptions = {};
+let currentEvidenceCaptions = {};
 let evidenceDbPromise = null;
 let evidenceSelectionTouched = false;
+
+const SKILL_CATEGORIES = {
+    "Programming Languages": ["python", "javascript", "typescript", "java", "c++", "c#", "react", "vue", "angular", "nodejs", "node.js", "rust", "kotlin", "swift", "perl", "php", "ruby", "matlab"],
+    "Web & Frontend": ["html", "css", "tailwind", "bootstrap", "webpack", "babel", "next", "next.js", "vite", "svelte", "react", "vue", "angular", "graphql", "fetch"],
+    "Backend & Databases": ["sql", "mongodb", "postgresql", "mysql", "firebase", "dynamodb", "redis", "elasticsearch", "docker", "kubernetes", "aws", "azure", "gcp", "git", "github"],
+    "Data & AI": ["machine learning", "deep learning", "tensorflow", "pytorch", "keras", "pandas", "numpy", "scikit-learn", "nlp", "computer vision", "data analysis", "big data", "spark", "hadoop"],
+    "Tools & Methods": ["agile", "scrum", "kanban", "jira", "linear", "figma", "sketch", "adobe", "photoshop", "illustrator", "blender", "unity", "unreal", "ci/cd", "devops"]
+};
+
+const ITEM_THEMES = {
+    academic: {
+        "--item-surface": "#fdfbf7",
+        "--item-strong": "#8b4513",
+        "--item-muted": "#5c4a3a",
+        "--item-line-soft": "#dbcdbd",
+        "--item-line-soft-2": "#e8dccf",
+        "--item-surface-soft-2": "#f5ede4"
+    },
+    tech: {
+        "--item-surface": "#f7fbff",
+        "--item-strong": "#0066cc",
+        "--item-muted": "#43576c",
+        "--item-line-soft": "#c5dbef",
+        "--item-line-soft-2": "#dbe9f5",
+        "--item-surface-soft-2": "#ecf5ff"
+    },
+    artistic: {
+        "--item-surface": "#fff9f6",
+        "--item-strong": "#c45b3c",
+        "--item-muted": "#6e4a3f",
+        "--item-line-soft": "#e9c8be",
+        "--item-line-soft-2": "#f1ddd7",
+        "--item-surface-soft-2": "#fff0ea"
+    },
+    science: {
+        "--item-surface": "#f5fbf7",
+        "--item-strong": "#2f7a49",
+        "--item-muted": "#3f6250",
+        "--item-line-soft": "#bddcc8",
+        "--item-line-soft-2": "#d6ebdd",
+        "--item-surface-soft-2": "#eaf7ee"
+    },
+    outdoor: {
+        "--item-surface": "#f8f7ef",
+        "--item-strong": "#6a7a2f",
+        "--item-muted": "#5e6345",
+        "--item-line-soft": "#d0d1ba",
+        "--item-line-soft-2": "#e3e2d1",
+        "--item-surface-soft-2": "#efefe2"
+    },
+    minimalist: {
+        "--item-surface": "#ffffff",
+        "--item-strong": "#3f3f3f",
+        "--item-muted": "#555555",
+        "--item-line-soft": "#cfcfcf",
+        "--item-line-soft-2": "#e2e2e2",
+        "--item-surface-soft-2": "#f7f7f7"
+    },
+    print: {
+        "--item-surface": "#ffffff",
+        "--item-strong": "#222222",
+        "--item-muted": "#333333",
+        "--item-line-soft": "#8d8d8d",
+        "--item-line-soft-2": "#adadad",
+        "--item-surface-soft-2": "#ffffff"
+    }
+};
+
+let includeSkillsSummary = true;
 
 function showStatus(message, isError = false) {
     const messageText = document.getElementById("statusMessageText");
@@ -358,7 +433,15 @@ function sanitize(text) {
 
 function createEmptyData() {
     return {
-        identity: { courseCode: "", courseName: "", academicYear: "2025-26", term: "", projectType: "", projectTitle: "" },
+        identity: {
+            courseCode: "",
+            courseName: "",
+            academicYear: "2025-26",
+            term: "",
+            projectType: "",
+            projectTitle: "",
+            projectTheme: "tech"
+        },
         hkuContext: { faculty: "", department: "" },
         team: { role: "", teamSize: "" },
         contribution: { responsibilities: "" },
@@ -397,6 +480,49 @@ function inferFromCourseCode(codeRaw) {
     inferenceNote.textContent = prefix ? "No local mapping for prefix " + prefix + ". You can still continue." : "";
 }
 
+function buildEvidenceCaptionsUI(files) {
+    if (!files || !files.length) {
+        evidenceCaptionsSection.style.display = "none";
+        evidenceCaptions.innerHTML = "";
+        return;
+    }
+    
+    const captions = activeProjectId ? currentEvidenceCaptions : draftEvidenceCaptions;
+    const items = Array.from(files)
+        .filter(file => isImageFile(file))
+        .map(file => {
+            const caption = captions[file.name] || "";
+            return (
+                "<div class=\"caption-input-group\">" +
+                "<label style=\"font-size: 0.9em; margin-bottom: 0.3rem; display: block; font-weight: 500;\">" +
+                sanitize(file.name) +
+                "</label>" +
+                "<input type=\"text\" class=\"caption-input\" data-filename=\"" + sanitize(file.name) + "\"" +
+                " placeholder=\"e.g., 'Final UI mockup' or 'Test results screenshot'\" value=\"" + sanitize(caption) + "\" />" +
+                "</div>"
+            );
+        })
+        .join("");
+    
+    evidenceCaptions.innerHTML = items;
+    evidenceCaptionsSection.style.display = items ? "block" : "none";
+    
+    // Wire up caption updates
+    document.querySelectorAll(".caption-input").forEach(input => {
+        input.addEventListener("input", () => {
+            const filename = input.getAttribute("data-filename");
+            if (activeProjectId) {
+                currentEvidenceCaptions[filename] = input.value;
+            } else {
+                draftEvidenceCaptions[filename] = input.value;
+            }
+            if (editorOpen) {
+                scheduleAutosaveActiveProjectEdit();
+            }
+        });
+    });
+}
+
 function listEvidenceNames() {
     evidenceList.innerHTML = "";
     const files = Array.from(evidenceInput.files || []);
@@ -405,6 +531,9 @@ function listEvidenceNames() {
         li.textContent = file.name + " (" + Math.round(file.size / 1024) + " KB)";
         evidenceList.appendChild(li);
     });
+    
+    // Update captions UI
+    buildEvidenceCaptionsUI(files);
 }
 
 function isImageFile(file) {
@@ -470,6 +599,16 @@ function currentEvidenceNamesFromContext() {
     return activeProject.data.evidence.slice();
 }
 
+function getCurrentEvidenceWithCaptions() {
+    const files = Array.from(evidenceInput.files || []).map((f) => f.name);
+    const captions = activeProjectId ? currentEvidenceCaptions : draftEvidenceCaptions;
+    
+    return files.map(filename => ({
+        name: filename,
+        caption: captions[filename] || ""
+    }));
+}
+
 function supportsIndexedDb() {
     return typeof indexedDB !== "undefined";
 }
@@ -498,6 +637,77 @@ function openEvidenceDb() {
     });
 
     return evidenceDbPromise;
+}
+
+// Skill Extraction & Theme Functions
+
+function extractSkillsFromProject(data) {
+    if (!data) {
+        return {};
+    }
+
+    // Restrict extraction to explicit technical fields to avoid narrative false positives.
+    const text = [data.technical.tools || "", data.technical.methods || ""]
+        .join(" ")
+        .toLowerCase();
+
+    const foundSkills = {};
+    Object.entries(SKILL_CATEGORIES).forEach(([category, keywords]) => {
+        const matched = keywords.filter((keyword) => {
+            const normalizedKeyword = keyword.toLowerCase();
+            const escaped = normalizedKeyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const pattern = "(^|[^a-z0-9+#.-])" + escaped + "([^a-z0-9+#.-]|$)";
+            return new RegExp(pattern, "i").test(text);
+        });
+
+        if (matched.length > 0) {
+            foundSkills[category] = [...new Set(matched)];
+        }
+    });
+
+    return foundSkills;
+}
+
+function buildSkillsSummaryHtml(allProjects) {
+    const skillCounts = {};
+    
+    allProjects.forEach(projectRecord => {
+        const skills = extractSkillsFromProject(projectRecord.data);
+        Object.entries(skills).forEach(([category, keywords]) => {
+            if (!skillCounts[category]) skillCounts[category] = {};
+            keywords.forEach(skill => {
+                skillCounts[category][skill] = (skillCounts[category][skill] || 0) + 1;
+            });
+        });
+    });
+    
+    if (Object.keys(skillCounts).length === 0) return "";
+    
+    const sections = Object.entries(skillCounts).map(([category, skills]) => {
+        const items = Object.entries(skills)
+            .sort((a, b) => b[1] - a[1])
+            .map(([skill, count]) => {
+                const badge = count > 1 ? "<span class=\"skill-badge\" title=\"Used in " + count + " project(s)\">" + count + "</span>" : "";
+                return "<li>" + sanitize(skill) + badge + "</li>";
+            })
+            .join("");
+        return "<h4>" + sanitize(category) + "</h4><ul class=\"skills-list\">" + items + "</ul>";
+    }).join("");
+    
+    return section("Skills Summary", sections, true);
+}
+
+function normalizeItemTheme(themeName) {
+    const normalized = String(themeName || "").trim().toLowerCase();
+    return ITEM_THEMES[normalized] ? normalized : "tech";
+}
+
+function itemThemeStyle(themeName) {
+    const normalized = normalizeItemTheme(themeName);
+    const theme = ITEM_THEMES[normalized];
+    return Object.entries(theme)
+        .map(([varName, value]) => varName + ": " + value)
+        .join("; ");
 }
 
 function withEvidenceStore(mode, operation) {
@@ -683,7 +893,8 @@ function collectData() {
             academicYear: value("academicYear"),
             term: value("term"),
             projectType: value("projectType"),
-            projectTitle: value("projectTitle")
+            projectTitle: value("projectTitle"),
+            projectTheme: value("projectTheme") || "tech"
         },
         hkuContext: {
             faculty: value("faculty"),
@@ -712,7 +923,7 @@ function collectData() {
             lessons: value("lessons"),
             futureImprovements: value("futureImprovements")
         },
-        evidence: currentEvidenceNamesFromContext(),
+        evidence: getCurrentEvidenceWithCaptions(),
         meta: {
             generatedAt: new Date().toLocaleString()
         }
@@ -735,6 +946,7 @@ function setFormData(data) {
     byId("term").value = data.identity.term || "";
     byId("projectType").value = data.identity.projectType || "";
     byId("projectTitle").value = data.identity.projectTitle || "";
+    byId("projectTheme").value = normalizeItemTheme(data.identity.projectTheme || "tech");
 
     byId("role").value = data.team.role || "";
     byId("teamSize").value = data.team.teamSize || "";
@@ -751,6 +963,20 @@ function setFormData(data) {
 
     byId("lessons").value = data.reflection.lessons || "";
     byId("futureImprovements").value = data.reflection.futureImprovements || "";
+    
+    // Restore evidence captions
+    currentEvidenceCaptions = {};
+    if (Array.isArray(data.evidence)) {
+        data.evidence.forEach(item => {
+            if (typeof item === "object" && item.name) {
+                currentEvidenceCaptions[item.name] = item.caption || "";
+            } else if (typeof item === "string") {
+                // Backwards compatibility: old format with just filenames
+                currentEvidenceCaptions[item] = "";
+            }
+        });
+    }
+    
     inferFromCourseCode(byId("courseCode").value);
     updateTeamFieldVisibility();
 }
@@ -774,6 +1000,10 @@ function clearFormFields() {
     inferenceNote.classList.remove("warn");
     inferenceNote.textContent = "";
     evidenceList.innerHTML = "";
+    evidenceCaptionsSection.style.display = "none";
+    evidenceCaptions.innerHTML = "";
+    currentEvidenceCaptions = {};
+    draftEvidenceCaptions = {};
     setDraftEvidencePreviewUrls([]);
     deleteProjectEvidenceEntries(DRAFT_EVIDENCE_KEY).catch(() => {});
 }
@@ -799,7 +1029,8 @@ function collectProfile() {
         email: (profileEmailInput.value || "").trim(),
         phone: (profilePhoneInput.value || "").trim(),
         link: (profileLinkInput.value || "").trim(),
-        displayMode: (profileDisplayModeInput && profileDisplayModeInput.value) || "per-project"
+        displayMode: (profileDisplayModeInput && profileDisplayModeInput.value) || "per-project",
+        theme: (profileThemeSelect && profileThemeSelect.value) || "academic"
     };
 }
 
@@ -809,6 +1040,9 @@ function setProfileFields(profileData) {
     profileEmailInput.value = safe.email || "";
     profilePhoneInput.value = safe.phone || "";
     profileLinkInput.value = safe.link || "";
+    if (profileThemeSelect) {
+        profileThemeSelect.value = normalizeItemTheme(safe.theme || "academic");
+    }
     if (profileDisplayModeInput) {
         profileDisplayModeInput.value = safe.displayMode || "per-project";
     }
@@ -861,19 +1095,30 @@ function portfolioHeaderHtml(profileData) {
         return "";
     }
 
-    return "<header class=\"portfolio-header\">" + lines.join("") + "</header>";
+    const headerTheme = normalizeItemTheme(profileData.theme || "academic");
+    return (
+        "<header class=\"portfolio-header\" data-item-theme=\"" +
+        sanitize(headerTheme) +
+        "\" style=\"" +
+        sanitize(itemThemeStyle(headerTheme)) +
+        "\">" +
+        lines.join("") +
+        "</header>"
+    );
 }
 
 function buildPortfolioPreviewHtml(projectDataList) {
     const list = projectDataList || [];
     const header = portfolioHeaderHtml(profile);
+    const skillsSummary = includeSkillsSummary ? buildSkillsSummaryHtml(list) : "";
     const sheets = list
         .map((projectRecord, index) => {
             const previewUrls = evidencePreviewUrlsByProjectId.get(projectRecord.id) || [];
-            return buildProjectSheetHtml(projectRecord.data, index + 1, previewUrls);
+            const evidenceData = Array.isArray(projectRecord.data.evidence) ? projectRecord.data.evidence : [];
+            return buildProjectSheetHtml(projectRecord.data, index + 1, previewUrls, evidenceData);
         })
         .join("");
-    return header + sheets;
+    return header + skillsSummary + sheets;
 }
 
 function setEditorOpen(open, modeHint = "") {
@@ -984,19 +1229,26 @@ function sectionFromFields(title, fields, optional = true) {
     return section(title, filled.join("<br><br>"), optional);
 }
 
-function evidenceImagesHtml(previewUrls) {
+function evidenceImagesHtml(previewUrls, evidenceData = []) {
     if (!previewUrls || !previewUrls.length) {
         return "";
     }
 
     const imageItems = previewUrls
         .map((url, index) => {
+            const evidence = evidenceData && evidenceData[index];
+            const caption = evidence && evidence.caption ? sanitize(evidence.caption) : "";
+            const captionHtml = caption ? ("<figcaption class=\"evidence-caption\">" + caption + "</figcaption>") : "";
             return (
+                "<figure class=\"evidence-figure\">" +
                 "<img src=\"" +
                 sanitize(url) +
                 "\" alt=\"Evidence image " +
                 sanitize(String(index + 1)) +
-                "\" loading=\"lazy\">"
+                (caption ? ": " + caption : "") +
+                "\" loading=\"lazy\">" +
+                captionHtml +
+                "</figure>"
             );
         })
         .join("");
@@ -1022,7 +1274,7 @@ function estimateContentLength(data) {
         .trim().length;
 }
 
-function buildProjectSheetHtml(data, index, evidencePreviewUrls = []) {
+function buildProjectSheetHtml(data, index, evidencePreviewUrls = [], evidenceData = []) {
     const termLabel = [data.identity.academicYear, data.identity.term].filter(Boolean).join(" ");
     const identityMeta = [
         data.identity.courseCode,
@@ -1088,7 +1340,7 @@ function buildProjectSheetHtml(data, index, evidencePreviewUrls = []) {
         )
     ].filter(Boolean);
 
-    const evidenceImagesSection = evidenceImagesHtml(evidencePreviewUrls);
+    const evidenceImagesSection = evidenceImagesHtml(evidencePreviewUrls, evidenceData);
     if (evidenceImagesSection) {
         blocks.push(evidenceImagesSection);
     }
@@ -1105,10 +1357,15 @@ function buildProjectSheetHtml(data, index, evidencePreviewUrls = []) {
 
     const likelyOnePage = estimateContentLength(data) <= 2600;
     const profileCorner = profileHtml(profile, index);
+    const projectTheme = normalizeItemTheme(data.identity.projectTheme || "tech");
 
     return (
         "<article class=\"project-sheet" +
         (likelyOnePage ? "" : " compact-print") +
+        "\" data-item-theme=\"" +
+        sanitize(projectTheme) +
+        "\" style=\"" +
+        sanitize(itemThemeStyle(projectTheme)) +
         "\"><header class=\"summary-header\"><div class=\"summary-top\"><div><h3>" +
         sanitize(data.identity.projectTitle || "Untitled Project") +
         "</h3><p class=\"preview-meta\">" +
@@ -1134,8 +1391,9 @@ function renderPreview() {
 
     if (editorOpen) {
         const draftRecord = { id: "__draft__", data: collectData() };
+        const draftEvidenceData = Array.isArray(draftRecord.data.evidence) ? draftRecord.data.evidence : [];
         previewEl.innerHTML =
-            portfolioHeaderHtml(profile) + buildProjectSheetHtml(draftRecord.data, 1, draftEvidencePreviewUrls);
+            portfolioHeaderHtml(profile) + buildProjectSheetHtml(draftRecord.data, 1, draftEvidencePreviewUrls, draftEvidenceData);
         printFitHint.textContent = "Previewing current draft project. Save it to include in exports.";
         return;
     }
@@ -1383,7 +1641,7 @@ async function applyImportedZipBundle(zipFile) {
     if (manifest.profile) {
         setProfileFields(manifest.profile);
     } else {
-        setProfileFields({ name: "", email: "", phone: "", link: "", displayMode: "per-project" });
+        setProfileFields({ name: "", email: "", phone: "", link: "", displayMode: "per-project", theme: "academic" });
     }
 
     setSortMode(manifest.sortMode || sortMode || "manual");
@@ -1419,6 +1677,7 @@ function persistSessionState() {
         editorOpen,
         sortMode,
         splitPages: splitPagesToggle.checked,
+        includeSkillsSummary,
         profile: collectProfile(),
         draft: editorOpen ? collectData() : createEmptyData()
     };
@@ -1492,6 +1751,9 @@ function scheduleAutosaveActiveProjectEdit() {
 function restoreSessionState() {
     const raw = localStorage.getItem(SESSION_STORAGE_KEY);
     if (!raw) {
+        if (includeSkillsToggle) {
+            includeSkillsSummary = includeSkillsToggle.checked;
+        }
         return;
     }
 
@@ -1502,7 +1764,16 @@ function restoreSessionState() {
         activeProjectId = parsed.activeProjectId || "";
         setSortMode(parsed.sortMode || "manual");
         splitPagesToggle.checked = Boolean(parsed.splitPages);
-        setProfileFields(parsed.profile || { name: "", email: "", phone: "", link: "" });
+        includeSkillsSummary =
+            typeof parsed.includeSkillsSummary === "boolean"
+                ? parsed.includeSkillsSummary
+                : includeSkillsToggle
+                  ? includeSkillsToggle.checked
+                  : true;
+        if (includeSkillsToggle) {
+            includeSkillsToggle.checked = includeSkillsSummary;
+        }
+        setProfileFields(parsed.profile || { name: "", email: "", phone: "", link: "", theme: "academic" });
 
         const activeProject = projects.find((project) => project.id === activeProjectId);
         if (activeProject) {
@@ -1835,7 +2106,7 @@ byId("resetForm").addEventListener("click", () => {
     schedulePersistSessionState();
 });
 
-[profileNameInput, profileEmailInput, profilePhoneInput, profileLinkInput].forEach((input) => {
+[profileNameInput, profileEmailInput, profilePhoneInput, profileLinkInput, profileThemeSelect].forEach((input) => {
     input.addEventListener("input", () => {
         profile = collectProfile();
         renderPreview();
@@ -1871,6 +2142,14 @@ if (statusMessageClose) {
 }
 
 splitPagesToggle.addEventListener("change", schedulePersistSessionState);
+
+if (includeSkillsToggle) {
+    includeSkillsToggle.addEventListener("change", () => {
+        includeSkillsSummary = includeSkillsToggle.checked;
+        renderPreview();
+        schedulePersistSessionState();
+    });
+}
 
 if (sortProjectsSelect) {
     sortProjectsSelect.addEventListener("change", () => {
@@ -2095,7 +2374,7 @@ window.addEventListener("beforeunload", persistSessionState);
 window.addEventListener("resize", updateHeaderOffset);
 
 setEditorOpen(false);
-setProfileFields({ name: "", email: "", phone: "", link: "" });
+setProfileFields({ name: "", email: "", phone: "", link: "", theme: "academic" });
 updateTeamFieldVisibility();
 initializeTheme();
 setupAutoHideTopbar();
