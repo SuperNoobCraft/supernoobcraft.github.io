@@ -958,6 +958,18 @@ summary:focus,
     align-items: end;
 }
 
+.display-mode-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-weight: 600;
+    font-size: 0.93rem;
+}
+
+.display-mode-label {
+    margin: 0;
+}
+
 .theme-compact {
     min-width: 168px;
     max-width: 210px;
