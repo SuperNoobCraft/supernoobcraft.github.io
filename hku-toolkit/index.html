@@ -13,6 +13,12 @@
             rel="stylesheet"
             href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap"
         />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+        />
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         <link rel="stylesheet" href="styles.css" />
     </head>
@@ -44,6 +50,9 @@
                 <a href="about.html">About</a>
                 <a href="help.html">Help</a>
                 <a href="privacy.html">Privacy</a>
+                <button type="button" id="historyToggle" class="icon-toggle-btn" aria-label="Open autosave history" title="Autosave history">
+                    <i class="fas fa-history" aria-hidden="true"></i>
+                </button>
                 <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Toggle color theme">Dark mode</button>
             </nav>
         </header>
@@ -131,6 +140,7 @@
                         </label>
                         <p id="autosaveHint" class="autosave-hint" aria-live="polite">Autosave active.</p>
                     </div>
+
                     <label class="inline-toggle" for="splitPagesToggle">
                         <input id="splitPagesToggle" type="checkbox" checked />
                         Each project on individual page
@@ -146,7 +156,15 @@
                 </section>
 
                 <section class="card form-card is-hidden" id="editorCard" aria-labelledby="form-heading">
-                    <h2 id="form-heading">Project Editor</h2>
+                    <div class="editor-head">
+                        <h2 id="form-heading">Project Editor</h2>
+                        <details class="item-menu editor-menu">
+                            <summary>...</summary>
+                            <div class="item-menu-panel">
+                                <button type="button" data-editor-action="apply-preset">Apply preset</button>
+                            </div>
+                        </details>
+                    </div>
                     <p id="editorModeHint" class="hint">Create a new project or edit a selected one.</p>
 
                     <form id="project-form" novalidate>
@@ -355,6 +373,32 @@
                 </ol>
                 <div class="modal-actions">
                     <button type="button" id="welcomeClose" class="primary" onclick="window.dismissWelcomeModal && window.dismissWelcomeModal()">Got it</button>
+                </div>
+            </section>
+        </div>
+        <div id="historyModal" class="modal-backdrop is-hidden" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+            <section class="modal-card history-modal-card">
+                <div class="history-modal-head">
+                    <h2 id="historyTitle">Autosave History</h2>
+                    <button type="button" id="historyCloseIcon" class="status-message-close" aria-label="Close autosave history">x</button>
+                </div>
+                <p class="hint">Snapshots are captured every few minutes when changes are detected.</p>
+                <ul id="historyList" class="history-list"></ul>
+                <div class="modal-actions">
+                    <button type="button" id="historyClose" class="primary">Close</button>
+                </div>
+            </section>
+        </div>
+        <div id="presetPickerModal" class="modal-backdrop is-hidden" role="dialog" aria-modal="true" aria-labelledby="presetPickerTitle">
+            <section class="modal-card history-modal-card">
+                <div class="history-modal-head">
+                    <h2 id="presetPickerTitle">Apply Preset</h2>
+                    <button type="button" id="presetPickerCloseIcon" class="status-message-close" aria-label="Close preset picker">x</button>
+                </div>
+                <p class="hint">Pick a preset to apply its non-empty fields to the current project.</p>
+                <ul id="presetPickerList" class="history-list"></ul>
+                <div class="modal-actions">
+                    <button type="button" id="presetPickerClose" class="primary">Close</button>
                 </div>
             </section>
         </div>

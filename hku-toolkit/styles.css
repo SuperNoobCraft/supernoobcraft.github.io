@@ -402,6 +402,117 @@ legend {
     color: var(--muted);
 }
 
+.icon-toggle-btn {
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--text);
+    border-radius: 999px;
+    width: 1.9rem;
+    height: 1.9rem;
+    padding: 0;
+    font-size: 0.82rem;
+    line-height: 1;
+    font-weight: 800;
+}
+
+.icon-toggle-btn:hover {
+    background: var(--surface-soft);
+}
+
+.icon-toggle-btn i {
+    font-size: 0.95rem;
+    line-height: 1;
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+}
+
+.editor-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.45rem;
+}
+
+.editor-menu {
+    margin-left: auto;
+}
+
+.history-modal-card {
+    width: min(680px, 96vw);
+}
+
+.history-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.history-list {
+    list-style: none;
+    margin: 0.6rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0.45rem;
+    max-height: 48vh;
+    overflow: auto;
+}
+
+.history-item {
+    border: 1px solid var(--line-soft);
+    border-radius: 10px;
+    padding: 0.5rem 0.6rem;
+    background: var(--surface-soft-2);
+    display: grid;
+    gap: 0.4rem;
+}
+
+.history-item-meta {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.83rem;
+}
+
+.history-item-actions {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.history-item-actions button {
+    padding: 0.32rem 0.7rem;
+    font-size: 0.8rem;
+}
+
+.preset-item {
+    border: 1px solid var(--line-soft);
+    border-radius: 10px;
+    padding: 0.55rem 0.65rem;
+    background: var(--surface-soft-2);
+    display: grid;
+    gap: 0.35rem;
+}
+
+.preset-item button {
+    width: 100%;
+    border-radius: 8px;
+    text-align: left;
+    border-color: var(--line-strong);
+    color: var(--text);
+    background: var(--surface);
+}
+
+.preset-item button:hover {
+    background: var(--surface-soft);
+}
+
+.preset-item-meta {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
 .mode-segment {
     width: min(360px, 100%);
     display: grid;

@@ -54,6 +54,10 @@ const JSON_START = "--- HKU_PROJECT_COLLECTION_JSON_START ---";
 const JSON_END = "--- HKU_PROJECT_COLLECTION_JSON_END ---";
 const SESSION_STORAGE_KEY = "hkuProjectToolSessionV1";
 const WELCOME_STORAGE_KEY = "hkuProjectToolWelcomeSeenV1";
+const PROJECT_PRESETS_STORAGE_KEY = "hkuProjectToolProjectPresetsV1";
+const VERSION_HISTORY_STORAGE_KEY = "hkuProjectToolVersionHistoryV1";
+const VERSION_HISTORY_LIMIT = 20;
+const AUTO_HISTORY_INTERVAL_MS = 3 * 60 * 1000;
 const EVIDENCE_DB_NAME = "hkuToolkitEvidenceV1";
 const EVIDENCE_DB_VERSION = 1;
 const EVIDENCE_STORE_NAME = "projectEvidence";
@@ -92,9 +96,19 @@ const profileModeTop = document.getElementById("profileModeTop");
 const autosaveHint = document.getElementById("autosaveHint");
 const statusMessage = document.getElementById("statusMessage");
 const themeToggle = document.getElementById("themeToggle");
+const historyToggle = document.getElementById("historyToggle");
 const topbar = document.querySelector(".topbar");
 const welcomeModal = document.getElementById("welcomeModal");
 const welcomeClose = document.getElementById("welcomeClose");
+const historyModal = document.getElementById("historyModal");
+const historyClose = document.getElementById("historyClose");
+const historyCloseIcon = document.getElementById("historyCloseIcon");
+const historyList = document.getElementById("historyList");
+const presetPickerModal = document.getElementById("presetPickerModal");
+const presetPickerClose = document.getElementById("presetPickerClose");
+const presetPickerCloseIcon = document.getElementById("presetPickerCloseIcon");
+const presetPickerList = document.getElementById("presetPickerList");
+const editorMenu = document.querySelector(".editor-menu");
 
 let projects = [];
 let activeProjectId = "";
@@ -113,6 +127,10 @@ let draftEvidenceCaptions = {};
 let currentEvidenceCaptions = {};
 let evidenceDbPromise = null;
 let evidenceSelectionTouched = false;
+let projectPresets = [];
+let versionHistory = [];
+let lastAutoHistoryAt = 0;
+let lastAutoHistorySignature = "";
 
 const SKILL_CATEGORIES = {
     "Programming Languages": ["python", "javascript", "typescript", "java", "c++", "c#", "react", "vue", "angular", "nodejs", "node.js", "rust", "kotlin", "swift", "perl", "php", "ruby", "matlab"],
@@ -710,6 +728,409 @@ function itemThemeStyle(themeName) {
         .join("; ");
 }
 
+function safeParseLocalStorage(key, fallbackValue) {
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) {
+            return fallbackValue;
+        }
+        return JSON.parse(raw);
+    } catch (error) {
+        return fallbackValue;
+    }
+}
+
+function formatDateTimeLabel(isoString) {
+    const date = new Date(isoString || Date.now());
+    if (Number.isNaN(date.getTime())) {
+        return "Unknown time";
+    }
+    return date.toLocaleString();
+}
+
+function persistProjectPresets() {
+    localStorage.setItem(PROJECT_PRESETS_STORAGE_KEY, JSON.stringify(projectPresets));
+}
+
+function loadProjectPresets() {
+    const parsed = safeParseLocalStorage(PROJECT_PRESETS_STORAGE_KEY, []);
+    projectPresets = Array.isArray(parsed)
+        ? parsed
+              .filter((preset) => preset && preset.id && preset.name && preset.fields)
+              .map((preset) => ({
+                  id: String(preset.id),
+                  name: String(preset.name).trim() || "Untitled preset",
+                  fields: preset.fields,
+                  createdAt: preset.createdAt || new Date().toISOString(),
+                  updatedAt: preset.updatedAt || new Date().toISOString()
+              }))
+        : [];
+}
+
+function isMeaningfulValue(value) {
+    if (typeof value === "string") {
+        return value.trim() !== "";
+    }
+    if (Array.isArray(value)) {
+        return value.length > 0;
+    }
+    if (value && typeof value === "object") {
+        return Object.keys(value).length > 0;
+    }
+    return value !== null && value !== undefined;
+}
+
+function createNonEmptyPatch(source, path = "") {
+    if (source === null || source === undefined) {
+        return undefined;
+    }
+
+    if (typeof source !== "object") {
+        return isMeaningfulValue(source) ? source : undefined;
+    }
+
+    if (Array.isArray(source)) {
+        if (!source.length) {
+            return undefined;
+        }
+        return JSON.parse(JSON.stringify(source));
+    }
+
+    const skippedTopLevel = path === "" ? { evidence: true, meta: true } : null;
+    const next = {};
+    Object.entries(source).forEach(([key, value]) => {
+        if (skippedTopLevel && skippedTopLevel[key]) {
+            return;
+        }
+
+        const childPath = path ? path + "." + key : key;
+        const child = createNonEmptyPatch(value, childPath);
+        if (child !== undefined) {
+            next[key] = child;
+        }
+    });
+
+    return Object.keys(next).length ? next : undefined;
+}
+
+function mergePresetFieldsIntoData(target, patch) {
+    if (!patch || typeof patch !== "object") {
+        return target;
+    }
+
+    if (Array.isArray(patch)) {
+        return JSON.parse(JSON.stringify(patch));
+    }
+
+    const result = { ...(target || {}) };
+    Object.entries(patch).forEach(([key, value]) => {
+        if (value && typeof value === "object" && !Array.isArray(value)) {
+            result[key] = mergePresetFieldsIntoData(result[key] || {}, value);
+            return;
+        }
+        result[key] = value;
+    });
+    return result;
+}
+
+function renderPresetPickerList() {
+    if (!presetPickerList) {
+        return;
+    }
+
+    if (!projectPresets.length) {
+        presetPickerList.innerHTML =
+            "<li class=\"preset-item\"><p class=\"preset-item-meta\">No presets yet. Save one from a project card menu first.</p></li>";
+        return;
+    }
+
+    presetPickerList.innerHTML = projectPresets
+        .map((preset) => {
+            const updated = formatDateTimeLabel(preset.updatedAt || preset.createdAt);
+            return (
+                "<li class=\"preset-item\">" +
+                "<button type=\"button\" data-preset-action=\"apply\" data-id=\"" +
+                sanitize(preset.id) +
+                "\">" +
+                sanitize(preset.name) +
+                "</button>" +
+                "<p class=\"preset-item-meta\">Updated: " +
+                sanitize(updated) +
+                "</p></li>"
+            );
+        })
+        .join("");
+}
+
+function openPresetPickerModal() {
+    if (!presetPickerModal) {
+        return;
+    }
+    renderPresetPickerList();
+    presetPickerModal.classList.remove("is-hidden");
+}
+
+function closePresetPickerModal() {
+    if (!presetPickerModal) {
+        return;
+    }
+    presetPickerModal.classList.add("is-hidden");
+}
+
+function applyPresetByIdToCurrentProject(presetId) {
+    const preset = projectPresets.find((item) => item.id === presetId);
+    if (!preset) {
+        showError("Preset not found.");
+        return;
+    }
+
+    const current = collectData();
+    const merged = mergePresetFieldsIntoData(current, preset.fields || {});
+    setFormData(merged);
+    updateTeamFieldVisibility();
+    renderPreview();
+    scheduleAutosaveActiveProjectEdit();
+    schedulePersistSessionState();
+    clearError();
+    showStatus("Applied preset: " + preset.name + ".");
+}
+
+function saveProjectAsPreset(projectId) {
+    const project = projects.find((item) => item.id === projectId);
+    if (!project) {
+        showError("Could not find this project to save as preset.");
+        return;
+    }
+
+    const suggestedName = project.data.identity.projectTitle || project.data.identity.courseCode || "Project preset";
+    const providedName = window.prompt("Preset name", suggestedName);
+    if (providedName === null) {
+        return;
+    }
+
+    const name = String(providedName).trim();
+    if (!name) {
+        showError("Preset name cannot be empty.");
+        return;
+    }
+
+    const fields = createNonEmptyPatch(project.data) || {};
+    if (!Object.keys(fields).length) {
+        showError("This project has no non-empty fields to save.");
+        return;
+    }
+
+    const existing = projectPresets.find((preset) => preset.name.toLowerCase() === name.toLowerCase());
+    if (existing) {
+        if (!window.confirm("Preset name exists. Overwrite it?")) {
+            return;
+        }
+        existing.fields = fields;
+        existing.updatedAt = new Date().toISOString();
+        persistProjectPresets();
+        renderPresetPickerList();
+        clearError();
+        showStatus("Updated preset: " + existing.name + ".");
+        return;
+    }
+
+    projectPresets.unshift({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+        name,
+        fields,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    });
+    persistProjectPresets();
+    renderPresetPickerList();
+    clearError();
+    showStatus("Saved preset from project: " + name + ".");
+}
+
+function applyPresetToCurrentProject() {
+    if (!editorOpen) {
+        showError("Open a project editor first to apply a preset.");
+        return;
+    }
+
+    openPresetPickerModal();
+}
+
+function persistVersionHistory() {
+    localStorage.setItem(VERSION_HISTORY_STORAGE_KEY, JSON.stringify(versionHistory));
+}
+
+function loadVersionHistory() {
+    const parsed = safeParseLocalStorage(VERSION_HISTORY_STORAGE_KEY, []);
+    versionHistory = Array.isArray(parsed)
+        ? parsed
+              .filter((entry) => entry && entry.id && entry.state)
+              .map((entry) => ({
+                  id: String(entry.id),
+                  savedAt: entry.savedAt || new Date().toISOString(),
+                  label: String(entry.label || "Autosave"),
+                  mode: entry.mode === "manual" ? "manual" : "auto",
+                  state: entry.state
+              }))
+              .slice(0, VERSION_HISTORY_LIMIT)
+        : [];
+}
+
+function buildHistorySnapshotLabel(mode, savedAt, count) {
+    const prefix = mode === "manual" ? "Manual" : "Auto";
+    return prefix + " - " + count + " project" + (count === 1 ? "" : "s") + " - " + formatDateTimeLabel(savedAt);
+}
+
+function buildCurrentHistoryState() {
+    return {
+        projects: JSON.parse(JSON.stringify(projects)),
+        profile: collectProfile(),
+        sortMode,
+        splitPages: Boolean(splitPagesToggle && splitPagesToggle.checked),
+        includeSkillsSummary: Boolean(includeSkillsSummary)
+    };
+}
+
+function historyStateSignature() {
+    return JSON.stringify({
+        projects,
+        profile: collectProfile(),
+        sortMode,
+        splitPages: Boolean(splitPagesToggle && splitPagesToggle.checked),
+        includeSkillsSummary: Boolean(includeSkillsSummary)
+    });
+}
+
+function addHistorySnapshot(mode = "auto") {
+    const savedAt = new Date().toISOString();
+    const state = buildCurrentHistoryState();
+    const record = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+        savedAt,
+        mode,
+        label: buildHistorySnapshotLabel(mode, savedAt, projects.length),
+        state
+    };
+
+    versionHistory.unshift(record);
+    if (versionHistory.length > VERSION_HISTORY_LIMIT) {
+        versionHistory = versionHistory.slice(0, VERSION_HISTORY_LIMIT);
+    }
+    persistVersionHistory();
+    renderHistoryList();
+    lastAutoHistoryAt = Date.now();
+    lastAutoHistorySignature = historyStateSignature();
+}
+
+function maybeCaptureAutoHistory() {
+    const signature = historyStateSignature();
+    if (signature === lastAutoHistorySignature) {
+        return;
+    }
+
+    if (Date.now() - lastAutoHistoryAt < AUTO_HISTORY_INTERVAL_MS) {
+        return;
+    }
+
+    addHistorySnapshot("auto");
+}
+
+function renderHistoryList() {
+    if (!historyList) {
+        return;
+    }
+
+    if (!versionHistory.length) {
+        historyList.innerHTML = "<li class=\"history-item\"><p class=\"history-item-meta\">No autosave snapshots yet.</p></li>";
+        return;
+    }
+
+    historyList.innerHTML = versionHistory
+        .map((entry) => {
+            return (
+                "<li class=\"history-item\">" +
+                "<strong>" + sanitize(entry.label) + "</strong>" +
+                "<p class=\"history-item-meta\">Saved at: " + sanitize(formatDateTimeLabel(entry.savedAt)) + "</p>" +
+                "<div class=\"history-item-actions\">" +
+                "<button type=\"button\" data-history-action=\"restore\" data-id=\"" + sanitize(entry.id) + "\">Restore</button>" +
+                "<button type=\"button\" data-history-action=\"delete\" data-id=\"" + sanitize(entry.id) + "\">Delete</button>" +
+                "</div></li>"
+            );
+        })
+        .join("");
+}
+
+async function restoreHistorySnapshotById(snapshotId) {
+    const entry = versionHistory.find((item) => item.id === snapshotId);
+    if (!entry) {
+        showError("Snapshot not found.");
+        return;
+    }
+
+    if (!window.confirm("Restore this autosave snapshot? Current unsaved state will be replaced.")) {
+        return;
+    }
+
+    const parsedProjects = coerceImportedProjectRecords(entry.state.projects);
+    projects = parsedProjects;
+    activeProjectId = "";
+    clearAllEvidencePreviewUrls();
+    clearFormFields();
+    setEditorOpen(false);
+
+    setProfileFields(entry.state.profile || { name: "", email: "", phone: "", link: "", displayMode: "per-project", theme: "academic" });
+    setSortMode(entry.state.sortMode || "manual");
+    if (splitPagesToggle) {
+        splitPagesToggle.checked = Boolean(entry.state.splitPages);
+    }
+    includeSkillsSummary = Boolean(entry.state.includeSkillsSummary);
+    if (includeSkillsToggle) {
+        includeSkillsToggle.checked = includeSkillsSummary;
+    }
+
+    await preloadEvidencePreviewUrlsForProjects(projects.map((project) => project.id));
+    applySortMode(sortMode, false);
+    renderProjectList();
+    renderPreview();
+    clearError();
+    showStatus("Restored snapshot.");
+    schedulePersistSessionState();
+    lastAutoHistorySignature = historyStateSignature();
+}
+
+function deleteHistorySnapshotById(snapshotId) {
+    const entry = versionHistory.find((item) => item.id === snapshotId);
+    if (!entry) {
+        showError("Snapshot not found.");
+        return;
+    }
+
+    if (!window.confirm("Delete this autosave snapshot?")) {
+        return;
+    }
+
+    versionHistory = versionHistory.filter((item) => item.id !== snapshotId);
+    persistVersionHistory();
+    renderHistoryList();
+    clearError();
+    showStatus("Deleted autosave snapshot.");
+}
+
+function openHistoryModal() {
+    if (!historyModal) {
+        return;
+    }
+    renderHistoryList();
+    historyModal.classList.remove("is-hidden");
+}
+
+function closeHistoryModal() {
+    if (!historyModal) {
+        return;
+    }
+    historyModal.classList.add("is-hidden");
+}
+
 function withEvidenceStore(mode, operation) {
     return openEvidenceDb().then((db) => {
         if (!db) {
@@ -1161,6 +1582,7 @@ function projectCardTemplate(project, index) {
         "<details class=\"item-menu\"><summary>...</summary>" +
         "<div class=\"item-menu-panel\">" +
         "<button type=\"button\" data-action=\"edit\">Edit</button>" +
+        "<button type=\"button\" data-action=\"save-preset\">Save as preset</button>" +
         "<button type=\"button\" data-action=\"duplicate\">Duplicate</button>" +
         "<button type=\"button\" data-action=\"move-up\">Move up</button>" +
         "<button type=\"button\" data-action=\"move-down\">Move down</button>" +
@@ -1684,6 +2106,7 @@ function persistSessionState() {
     localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(snapshot));
     lastSavedAt = Date.now();
     updateAutosaveHint();
+    maybeCaptureAutoHistory();
 }
 
 function schedulePersistSessionState() {
@@ -1799,11 +2222,13 @@ function restoreSessionState() {
                 renderPreview();
                 clearError();
                 showStatus("Recovered previous session automatically.");
+                lastAutoHistorySignature = historyStateSignature();
             })
             .catch(() => {
                 renderPreview();
                 clearError();
                 showStatus("Recovered previous session automatically.");
+                lastAutoHistorySignature = historyStateSignature();
             });
     } catch (error) {
         localStorage.removeItem(SESSION_STORAGE_KEY);
@@ -2141,6 +2566,92 @@ if (statusMessageClose) {
     });
 }
 
+if (historyToggle) {
+    historyToggle.addEventListener("click", openHistoryModal);
+}
+
+if (historyClose) {
+    historyClose.addEventListener("click", closeHistoryModal);
+}
+
+if (historyCloseIcon) {
+    historyCloseIcon.addEventListener("click", closeHistoryModal);
+}
+
+if (historyModal) {
+    historyModal.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (event.target === historyModal) {
+            closeHistoryModal();
+            return;
+        }
+
+        const actionBtn = event.target.closest("[data-history-action]");
+        if (!actionBtn) {
+            return;
+        }
+
+        const snapshotId = actionBtn.getAttribute("data-id") || "";
+        const action = actionBtn.getAttribute("data-history-action") || "";
+        if (action === "restore") {
+            restoreHistorySnapshotById(snapshotId).catch(() => {
+                showError("Could not restore that snapshot right now.");
+            });
+            return;
+        }
+
+        if (action === "delete") {
+            deleteHistorySnapshotById(snapshotId);
+        }
+    });
+}
+
+if (presetPickerClose) {
+    presetPickerClose.addEventListener("click", closePresetPickerModal);
+}
+
+if (presetPickerCloseIcon) {
+    presetPickerCloseIcon.addEventListener("click", closePresetPickerModal);
+}
+
+if (presetPickerModal) {
+    presetPickerModal.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (event.target === presetPickerModal) {
+            closePresetPickerModal();
+            return;
+        }
+
+        const actionBtn = event.target.closest("[data-preset-action]");
+        if (!actionBtn) {
+            return;
+        }
+
+        const presetId = actionBtn.getAttribute("data-id") || "";
+        const action = actionBtn.getAttribute("data-preset-action") || "";
+        if (action === "apply") {
+            applyPresetByIdToCurrentProject(presetId);
+            closePresetPickerModal();
+        }
+    });
+}
+
+if (editorMenu) {
+    editorMenu.addEventListener("click", (event) => {
+        const actionBtn = event.target.closest("[data-editor-action]");
+        if (!actionBtn) {
+            return;
+        }
+
+        const action = actionBtn.getAttribute("data-editor-action");
+        if (action === "apply-preset") {
+            applyPresetToCurrentProject();
+        }
+
+        editorMenu.removeAttribute("open");
+    });
+}
+
 splitPagesToggle.addEventListener("change", schedulePersistSessionState);
 
 if (includeSkillsToggle) {
@@ -2179,6 +2690,9 @@ projectList.addEventListener("click", (event) => {
             selectProjectById(projectId);
             clearError();
             showStatus("Loaded project for editing.");
+        }
+        if (menuButton.getAttribute("data-action") === "save-preset") {
+            saveProjectAsPreset(projectId);
         }
         if (menuButton.getAttribute("data-action") === "delete") {
             deleteProjectById(projectId);
@@ -2257,6 +2771,10 @@ document.addEventListener("click", (event) => {
         return;
     }
 
+    if (event.target.closest("#presetPickerModal") || event.target.closest("#historyModal")) {
+        return;
+    }
+
     if (event.target.closest("#editorCard")) {
         return;
     }
@@ -2274,6 +2792,16 @@ document.addEventListener("click", (event) => {
 
 document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") {
+        return;
+    }
+
+    if (presetPickerModal && !presetPickerModal.classList.contains("is-hidden")) {
+        closePresetPickerModal();
+        return;
+    }
+
+    if (historyModal && !historyModal.classList.contains("is-hidden")) {
+        closeHistoryModal();
         return;
     }
 
@@ -2378,6 +2906,9 @@ setProfileFields({ name: "", email: "", phone: "", link: "", theme: "academic" }
 updateTeamFieldVisibility();
 initializeTheme();
 setupAutoHideTopbar();
+loadProjectPresets();
+loadVersionHistory();
+renderHistoryList();
 restoreSessionState();
 if (!projects.length && !editorOpen) {
     renderProjectList();
