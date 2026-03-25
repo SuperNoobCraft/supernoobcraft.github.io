@@ -43,6 +43,11 @@
     --status-text: #b8d7e8;
 }
 
+html.theme-transition,
+html.theme-transition * {
+    transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
 * {
     box-sizing: border-box;
 }
@@ -137,6 +142,14 @@ legend {
     background: var(--surface-soft-2);
 }
 
+.site-switcher > summary {
+    transition: background 0.11s ease, transform 0.11s ease;
+}
+
+.site-switcher[open] > summary {
+    transform: translateY(1px);
+}
+
 .burger-icon {
     display: inline-grid;
     gap: 0.18rem;
@@ -163,6 +176,11 @@ legend {
     background: var(--card);
     box-shadow: 0 10px 24px rgba(12, 45, 65, 0.16);
     z-index: 110;
+}
+
+.site-switcher[open] .site-switcher-menu {
+    animation: quick-menu-in 0.12s ease-out;
+    transform-origin: top left;
 }
 
 .site-switcher-menu a {
@@ -442,6 +460,19 @@ legend {
     width: min(680px, 96vw);
 }
 
+.preset-save-modal-card {
+    width: min(520px, 96vw);
+}
+
+.preset-save-actions {
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+#presetSaveName {
+    margin-top: 0.2rem;
+}
+
 .history-modal-head {
     display: flex;
     align-items: center;
@@ -598,6 +629,7 @@ legend {
     padding: 0.5rem;
     background: var(--surface);
     cursor: pointer;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease, background 0.12s ease;
 }
 
 .project-item.active {
@@ -606,17 +638,89 @@ legend {
 }
 
 .project-item.dragging {
-    opacity: 0.6;
+    opacity: 0.45;
+    transform: scale(0.99);
+}
+
+.project-item-left {
+    display: grid;
+    grid-template-columns: minmax(1.35rem, auto) auto;
+    align-items: center;
+    gap: 0.32rem;
+}
+
+.project-item-controls {
+    display: grid;
+    gap: 0.08rem;
+    align-items: center;
+    justify-items: center;
+}
+
+.project-order-indicator {
+    font-size: 0.96rem;
+    font-weight: 800;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+    min-width: 1.35rem;
+    text-align: center;
+    line-height: 1;
 }
 
 .drag-handle {
-    border: 1px solid var(--line-strong);
-    border-radius: 8px;
-    background: var(--surface-soft);
+    border: none;
+    border-radius: 0;
+    background: transparent;
     color: var(--muted);
-    padding: 0.25rem 0.4rem;
-    font-size: 0.74rem;
+    width: 1.5rem;
+    min-height: 1.65rem;
+    padding: 0;
     cursor: grab;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.drag-bars {
+    display: grid;
+    gap: 0.2rem;
+    width: 0.9rem;
+}
+
+.drag-bars span {
+    display: block;
+    width: 100%;
+    height: 2px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--strong) 76%, var(--muted));
+}
+
+.project-step-btn {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    color: var(--muted);
+    width: 1.25rem;
+    min-height: 0.82rem;
+    font-size: 0.62rem;
+    line-height: 1;
+    padding: 0;
+    cursor: pointer;
+}
+
+.project-step-btn:hover,
+.drag-handle:hover {
+    color: var(--strong);
+}
+
+.project-step-btn:focus-visible,
+.drag-handle:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--strong) 65%, transparent);
+    outline-offset: 2px;
+    border-radius: 4px;
 }
 
 .project-item-main {
@@ -652,10 +756,16 @@ legend {
     cursor: pointer;
     font-weight: 700;
     color: var(--muted);
+    transition: background 0.11s ease, color 0.11s ease, transform 0.11s ease;
 }
 
 .item-menu > summary::-webkit-details-marker {
     display: none;
+}
+
+.item-menu[open] > summary {
+    background: var(--surface-soft-2);
+    transform: translateY(1px);
 }
 
 .item-menu-panel {
@@ -672,6 +782,11 @@ legend {
     min-width: 138px;
 }
 
+.item-menu[open] .item-menu-panel {
+    animation: quick-menu-in 0.11s ease-out;
+    transform-origin: top right;
+}
+
 .item-menu-panel button {
     width: 100%;
     border-radius: 6px;
@@ -686,6 +801,20 @@ legend {
 
 .item-menu-panel button:hover {
     background: var(--surface-soft);
+}
+
+.delete-action,
+.item-menu-panel button.delete-action,
+.history-item-actions button.delete-action {
+    color: var(--warn) !important;
+    border-color: color-mix(in srgb, var(--warn) 38%, var(--line-strong)) !important;
+    background: color-mix(in srgb, var(--warn) 8%, var(--surface-soft-2)) !important;
+}
+
+.delete-action:hover,
+.item-menu-panel button.delete-action:hover,
+.history-item-actions button.delete-action:hover {
+    background: color-mix(in srgb, var(--warn) 13%, var(--surface-soft)) !important;
 }
 
 fieldset {
@@ -1168,6 +1297,23 @@ button.primary:hover {
     margin-top: 0.85rem;
     display: flex;
     justify-content: flex-end;
+}
+
+.confirm-modal-message {
+    margin-top: 0.1rem;
+    margin-bottom: 0.2rem;
+    line-height: 1.45;
+}
+
+@keyframes quick-menu-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px) scale(0.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 @media (max-width: 1024px) {

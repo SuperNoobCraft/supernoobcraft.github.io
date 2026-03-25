@@ -2,6 +2,7 @@
     const THEME_KEY = "hkuProjectToolThemeV1";
     const THEME_COOKIE = "hkuProjectToolTheme";
     const VALID_THEMES = new Set(["light", "dark"]);
+    let themeTransitionTimer = null;
 
     function isValidTheme(value) {
         return VALID_THEMES.has(value);
@@ -37,8 +38,22 @@
         return prefersDark ? "dark" : "light";
     }
 
-    function applyTheme(themeName) {
+    function startThemeTransition() {
+        document.documentElement.classList.add("theme-transition");
+        if (themeTransitionTimer) {
+            window.clearTimeout(themeTransitionTimer);
+        }
+        themeTransitionTimer = window.setTimeout(() => {
+            document.documentElement.classList.remove("theme-transition");
+            themeTransitionTimer = null;
+        }, 220);
+    }
+
+    function applyTheme(themeName, animate = false) {
         const safeTheme = isValidTheme(themeName) ? themeName : "light";
+        if (animate) {
+            startThemeTransition();
+        }
         document.documentElement.setAttribute("data-theme", safeTheme);
         document.documentElement.style.colorScheme = safeTheme;
     }
@@ -87,14 +102,14 @@
 
         button.addEventListener("click", () => {
             const next = getCurrentTheme() === "dark" ? "light" : "dark";
-            applyTheme(next);
+            applyTheme(next, true);
             persistTheme(next);
             updateToggleLabel(button);
         });
 
         window.addEventListener("storage", (event) => {
             if (event.key === THEME_KEY && isValidTheme(event.newValue)) {
-                applyTheme(event.newValue);
+                applyTheme(event.newValue, true);
                 updateToggleLabel(button);
             }
         });

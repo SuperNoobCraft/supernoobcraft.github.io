@@ -164,6 +164,9 @@
                             <summary aria-label="Open editor actions" title="Open editor actions">...</summary>
                             <div class="item-menu-panel">
                                 <button type="button" data-editor-action="apply-preset">Apply preset</button>
+                                <button type="button" data-editor-action="save-preset">Save as preset</button>
+                                <button type="button" data-editor-action="duplicate">Duplicate</button>
+                                <button type="button" data-editor-action="delete-project" class="delete-action">Delete project</button>
                             </div>
                         </details>
                     </div>
@@ -401,6 +404,37 @@
                 <ul id="presetPickerList" class="history-list"></ul>
                 <div class="modal-actions">
                     <button type="button" id="presetPickerClose" class="primary">Close</button>
+                </div>
+            </section>
+        </div>
+        <div id="presetSaveModal" class="modal-backdrop is-hidden" role="dialog" aria-modal="true" aria-labelledby="presetSaveTitle">
+            <section class="modal-card preset-save-modal-card">
+                <div class="history-modal-head">
+                    <h2 id="presetSaveTitle">Save Project as Preset</h2>
+                    <button type="button" id="presetSaveCloseIcon" class="status-message-close" aria-label="Close preset save dialog">x</button>
+                </div>
+                <p class="hint">Choose a preset name. Existing names can be overwritten intentionally.</p>
+                <form id="presetSaveForm" novalidate>
+                    <label for="presetSaveName">Preset name</label>
+                    <input id="presetSaveName" name="presetSaveName" maxlength="80" placeholder="Project preset" autocomplete="off" />
+                    <p id="presetSaveWarning" class="hint warn is-hidden" aria-live="polite"></p>
+                    <div class="modal-actions preset-save-actions">
+                        <button type="button" id="presetSaveCancel">Cancel</button>
+                        <button type="submit" id="presetSaveConfirm" class="primary">Save preset</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+        <div id="confirmModal" class="modal-backdrop is-hidden" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+            <section class="modal-card preset-save-modal-card">
+                <div class="history-modal-head">
+                    <h2 id="confirmModalTitle">Please confirm</h2>
+                    <button type="button" id="confirmModalCloseIcon" class="status-message-close" aria-label="Close confirmation dialog">x</button>
+                </div>
+                <p id="confirmModalMessage" class="hint confirm-modal-message"></p>
+                <div class="modal-actions preset-save-actions">
+                    <button type="button" id="confirmModalCancel">Cancel</button>
+                    <button type="button" id="confirmModalConfirm" class="primary">Confirm</button>
                 </div>
             </section>
         </div>

@@ -38,6 +38,18 @@
 
     const THEME_KEY = "hkuProjectToolThemeV1";
     let currentTheme = "light";
+    let themeTransitionTimer = null;
+
+    function startThemeTransition() {
+        document.documentElement.classList.add("theme-transition");
+        if (themeTransitionTimer) {
+            window.clearTimeout(themeTransitionTimer);
+        }
+        themeTransitionTimer = window.setTimeout(() => {
+            document.documentElement.classList.remove("theme-transition");
+            themeTransitionTimer = null;
+        }, 220);
+    }
 
     function updateThemeToggleButton(theme) {
         if (!toggleButton) {
@@ -59,10 +71,13 @@
         }
     };
 
-    const setTheme = (theme) => {
+    const setTheme = (theme, animate = false) => {
         try {
             localStorage.setItem(THEME_KEY, theme);
         } catch {}
+        if (animate) {
+            startThemeTransition();
+        }
         currentTheme = theme;
         document.documentElement.setAttribute("data-theme", theme);
         document.documentElement.style.colorScheme = theme;
@@ -84,14 +99,14 @@
             updateThemeToggleButton(currentTheme);
             toggleButton.addEventListener("click", function () {
                 const newTheme = getTheme() === "dark" ? "light" : "dark";
-                setTheme(newTheme);
+                setTheme(newTheme, true);
             });
         }
 
         // Listen for theme changes from other tabs/windows
         window.addEventListener("storage", function (event) {
             if (event.key === THEME_KEY && event.newValue) {
-                setTheme(event.newValue);
+                setTheme(event.newValue, true);
             }
         });
     }

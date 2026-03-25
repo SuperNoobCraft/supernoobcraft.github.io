@@ -108,11 +108,26 @@ const presetPickerModal = document.getElementById("presetPickerModal");
 const presetPickerClose = document.getElementById("presetPickerClose");
 const presetPickerCloseIcon = document.getElementById("presetPickerCloseIcon");
 const presetPickerList = document.getElementById("presetPickerList");
+const presetSaveModal = document.getElementById("presetSaveModal");
+const presetSaveForm = document.getElementById("presetSaveForm");
+const presetSaveNameInput = document.getElementById("presetSaveName");
+const presetSaveWarning = document.getElementById("presetSaveWarning");
+const presetSaveConfirm = document.getElementById("presetSaveConfirm");
+const presetSaveCancel = document.getElementById("presetSaveCancel");
+const presetSaveCloseIcon = document.getElementById("presetSaveCloseIcon");
+const confirmModal = document.getElementById("confirmModal");
+const confirmModalTitle = document.getElementById("confirmModalTitle");
+const confirmModalMessage = document.getElementById("confirmModalMessage");
+const confirmModalConfirm = document.getElementById("confirmModalConfirm");
+const confirmModalCancel = document.getElementById("confirmModalCancel");
+const confirmModalCloseIcon = document.getElementById("confirmModalCloseIcon");
 const editorMenu = document.querySelector(".editor-menu");
 
 let projects = [];
 let activeProjectId = "";
 let draggingProjectId = "";
+let dragHandleProjectId = "";
+let dragOrderDirty = false;
 let editorOpen = false;
 let profile = { name: "", email: "", phone: "", link: "", displayMode: "per-project", theme: "academic" };
 let persistTimer = null;
@@ -131,6 +146,9 @@ let projectPresets = [];
 let versionHistory = [];
 let lastAutoHistoryAt = 0;
 let lastAutoHistorySignature = "";
+let pendingPresetProjectId = "";
+let pendingPresetOverwriteId = "";
+let confirmModalResolver = null;
 
 const SKILL_CATEGORIES = {
     "Programming Languages": ["python", "javascript", "typescript", "java", "c++", "c#", "react", "vue", "angular", "nodejs", "node.js", "rust", "kotlin", "swift", "perl", "php", "ruby", "matlab"],
@@ -221,6 +239,43 @@ function showError(message) {
 
 function clearError() {
     errorSummary.textContent = "";
+}
+
+function resolveConfirmModal(value) {
+    if (confirmModalResolver) {
+        confirmModalResolver(Boolean(value));
+        confirmModalResolver = null;
+    }
+}
+
+function closeConfirmModal(result = false) {
+    if (!confirmModal) {
+        resolveConfirmModal(result);
+        return;
+    }
+    confirmModal.classList.add("is-hidden");
+    resolveConfirmModal(result);
+}
+
+function openConfirmModal(options = {}) {
+    if (!confirmModal || !confirmModalTitle || !confirmModalMessage || !confirmModalConfirm) {
+        return Promise.resolve(false);
+    }
+
+    if (confirmModalResolver) {
+        resolveConfirmModal(false);
+    }
+
+    confirmModalTitle.textContent = options.title || "Please confirm";
+    confirmModalMessage.textContent = options.message || "Are you sure?";
+    confirmModalConfirm.textContent = options.confirmText || "Confirm";
+    confirmModalConfirm.classList.toggle("primary", !options.destructive);
+    confirmModalConfirm.classList.toggle("delete-action", Boolean(options.destructive));
+    confirmModal.classList.remove("is-hidden");
+
+    return new Promise((resolve) => {
+        confirmModalResolver = resolve;
+    });
 }
 
 function setSortMode(nextMode) {
@@ -903,43 +958,48 @@ function applyPresetByIdToCurrentProject(presetId) {
     showStatus("Applied preset: " + preset.name + ".");
 }
 
-function saveProjectAsPreset(projectId) {
+function closePresetSaveModal() {
+    if (!presetSaveModal) {
+        return;
+    }
+    presetSaveModal.classList.add("is-hidden");
+    pendingPresetProjectId = "";
+    pendingPresetOverwriteId = "";
+    if (presetSaveWarning) {
+        presetSaveWarning.textContent = "";
+        presetSaveWarning.classList.add("is-hidden");
+    }
+    if (presetSaveConfirm) {
+        presetSaveConfirm.textContent = "Save preset";
+    }
+}
+
+function savePresetByName(projectId, name, allowOverwrite = false) {
     const project = projects.find((item) => item.id === projectId);
     if (!project) {
         showError("Could not find this project to save as preset.");
-        return;
-    }
-
-    const suggestedName = project.data.identity.projectTitle || project.data.identity.courseCode || "Project preset";
-    const providedName = window.prompt("Preset name", suggestedName);
-    if (providedName === null) {
-        return;
-    }
-
-    const name = String(providedName).trim();
-    if (!name) {
-        showError("Preset name cannot be empty.");
-        return;
+        return { status: "error" };
     }
 
     const fields = createNonEmptyPatch(project.data) || {};
     if (!Object.keys(fields).length) {
         showError("This project has no non-empty fields to save.");
-        return;
+        return { status: "error" };
     }
 
     const existing = projectPresets.find((preset) => preset.name.toLowerCase() === name.toLowerCase());
+    if (existing && !allowOverwrite) {
+        return { status: "needs-overwrite", existingId: existing.id, existingName: existing.name };
+    }
+
     if (existing) {
-        if (!window.confirm("Preset name exists. Overwrite it?")) {
-            return;
-        }
         existing.fields = fields;
         existing.updatedAt = new Date().toISOString();
         persistProjectPresets();
         renderPresetPickerList();
         clearError();
         showStatus("Updated preset: " + existing.name + ".");
-        return;
+        return { status: "updated" };
     }
 
     projectPresets.unshift({
@@ -953,6 +1013,38 @@ function saveProjectAsPreset(projectId) {
     renderPresetPickerList();
     clearError();
     showStatus("Saved preset from project: " + name + ".");
+    return { status: "created" };
+}
+
+function openPresetSaveModal(projectId) {
+    if (!presetSaveModal || !presetSaveNameInput || !presetSaveWarning || !presetSaveConfirm) {
+        showError("Preset save dialog is unavailable.");
+        return;
+    }
+
+    const project = projects.find((item) => item.id === projectId);
+    if (!project) {
+        showError("Could not find this project to save as preset.");
+        return;
+    }
+
+    pendingPresetProjectId = projectId;
+    pendingPresetOverwriteId = "";
+    const suggestedName = project.data.identity.projectTitle || project.data.identity.courseCode || "Project preset";
+    presetSaveNameInput.value = suggestedName;
+    presetSaveWarning.textContent = "";
+    presetSaveWarning.classList.add("is-hidden");
+    presetSaveConfirm.textContent = "Save preset";
+
+    presetSaveModal.classList.remove("is-hidden");
+    setTimeout(() => {
+        presetSaveNameInput.focus();
+        presetSaveNameInput.select();
+    }, 0);
+}
+
+function saveProjectAsPreset(projectId) {
+    openPresetSaveModal(projectId);
 }
 
 function applyPresetToCurrentProject() {
@@ -1061,7 +1153,7 @@ function renderHistoryList() {
                 "<p class=\"history-item-meta\">Saved at: " + sanitize(formatDateTimeLabel(entry.savedAt)) + "</p>" +
                 "<div class=\"history-item-actions\">" +
                 "<button type=\"button\" data-history-action=\"restore\" data-id=\"" + sanitize(entry.id) + "\">Restore</button>" +
-                "<button type=\"button\" data-history-action=\"delete\" data-id=\"" + sanitize(entry.id) + "\">Delete</button>" +
+                "<button type=\"button\" data-history-action=\"delete\" data-id=\"" + sanitize(entry.id) + "\" class=\"delete-action\">Delete</button>" +
                 "</div></li>"
             );
         })
@@ -1075,7 +1167,12 @@ async function restoreHistorySnapshotById(snapshotId) {
         return;
     }
 
-    if (!window.confirm("Restore this autosave snapshot? Current unsaved state will be replaced.")) {
+    const shouldRestore = await openConfirmModal({
+        title: "Restore Snapshot",
+        message: "Restore this autosave snapshot? Current unsaved state will be replaced.",
+        confirmText: "Restore"
+    });
+    if (!shouldRestore) {
         return;
     }
 
@@ -1106,14 +1203,20 @@ async function restoreHistorySnapshotById(snapshotId) {
     lastAutoHistorySignature = historyStateSignature();
 }
 
-function deleteHistorySnapshotById(snapshotId) {
+async function deleteHistorySnapshotById(snapshotId) {
     const entry = versionHistory.find((item) => item.id === snapshotId);
     if (!entry) {
         showError("Snapshot not found.");
         return;
     }
 
-    if (!window.confirm("Delete this autosave snapshot?")) {
+    const shouldDelete = await openConfirmModal({
+        title: "Delete Snapshot",
+        message: "Delete this autosave snapshot?",
+        confirmText: "Delete",
+        destructive: true
+    });
+    if (!shouldDelete) {
         return;
     }
 
@@ -1574,7 +1677,18 @@ function projectCardTemplate(project, index) {
         "\" draggable=\"true\" tabindex=\"0\" role=\"button\" aria-label=\"Preview project " +
         sanitize(String(index + 1)) +
         "\">" +
-        "<button type=\"button\" class=\"drag-handle\" aria-label=\"Drag project to reorder\" title=\"Drag project to reorder\">drag</button>" +
+        "<div class=\"project-item-left\">" +
+        "<span class=\"project-order-indicator\" aria-label=\"Order position\">" +
+        sanitize(String(index + 1)) +
+        "</span>" +
+        "<div class=\"project-item-controls\">" +
+        "<button type=\"button\" class=\"project-step-btn\" data-action=\"move-up\" aria-label=\"Move project up one position\" title=\"Move up\">&#9650;</button>" +
+        "<button type=\"button\" class=\"drag-handle\" aria-label=\"Drag project to reorder\" title=\"Drag project to reorder\">" +
+        "<span class=\"drag-bars\" aria-hidden=\"true\"><span></span><span></span><span></span></span>" +
+        "</button>" +
+        "<button type=\"button\" class=\"project-step-btn\" data-action=\"move-down\" aria-label=\"Move project down one position\" title=\"Move down\">&#9660;</button>" +
+        "</div>" +
+        "</div>" +
         "<div class=\"project-item-main\">" +
         "<p class=\"project-item-title\">" +
         code +
@@ -1585,8 +1699,6 @@ function projectCardTemplate(project, index) {
         name +
         "<br>Updated: " +
         updated +
-        "<br>Order: " +
-        sanitize(String(index + 1)) +
         "</p></div>" +
         "<details class=\"item-menu\"><summary aria-label=\"" +
         menuLabel +
@@ -1597,9 +1709,7 @@ function projectCardTemplate(project, index) {
         "<button type=\"button\" data-action=\"edit\">Edit</button>" +
         "<button type=\"button\" data-action=\"save-preset\">Save as preset</button>" +
         "<button type=\"button\" data-action=\"duplicate\">Duplicate</button>" +
-        "<button type=\"button\" data-action=\"move-up\">Move up</button>" +
-        "<button type=\"button\" data-action=\"move-down\">Move down</button>" +
-        "<button type=\"button\" data-action=\"delete\">Delete</button>" +
+        "<button type=\"button\" data-action=\"delete\" class=\"delete-action\">Delete</button>" +
         "</div></details></li>"
     );
 }
@@ -2361,10 +2471,16 @@ function startNewProject() {
     byId("courseCode").focus();
 }
 
-function deleteProjectById(projectId) {
+async function deleteProjectById(projectId) {
     const target = projects.find((project) => project.id === projectId);
     const label = target ? (target.data.identity.projectTitle || target.data.identity.courseCode || "this project") : "this project";
-    if (!window.confirm("Delete " + label + "?")) {
+    const shouldDelete = await openConfirmModal({
+        title: "Delete Project",
+        message: "Delete " + label + "?",
+        confirmText: "Delete",
+        destructive: true
+    });
+    if (!shouldDelete) {
         return;
     }
 
@@ -2457,28 +2573,47 @@ function selectProjectById(projectId) {
     schedulePersistSessionState();
 }
 
-function moveProject(draggedId, targetId) {
+function moveProject(draggedId, targetId, placeAfter = false, announce = true, persist = true) {
+
     if (!draggedId || !targetId || draggedId === targetId) {
-        return;
+        return false;
     }
 
     const fromIndex = projects.findIndex((project) => project.id === draggedId);
     const toIndex = projects.findIndex((project) => project.id === targetId);
     if (fromIndex < 0 || toIndex < 0) {
-        return;
+        return false;
     }
 
     if (sortMode !== "manual") {
         setSortMode("manual");
     }
 
+    let insertIndex = toIndex;
+    if (fromIndex < toIndex) {
+        insertIndex -= 1;
+    }
+    if (placeAfter) {
+        insertIndex += 1;
+    }
+    insertIndex = Math.max(0, Math.min(insertIndex, projects.length - 1));
+
+    if (insertIndex === fromIndex) {
+        return false;
+    }
+
     const [moved] = projects.splice(fromIndex, 1);
-    projects.splice(toIndex, 0, moved);
+    projects.splice(insertIndex, 0, moved);
     renderProjectList();
     renderPreview();
     clearError();
-    showStatus("Project order updated.");
-    schedulePersistSessionState();
+    if (announce) {
+        showStatus("Project order updated.");
+    }
+    if (persist) {
+        schedulePersistSessionState();
+    }
+    return true;
 }
 
 byId("courseCode").addEventListener("input", (event) => {
@@ -2649,6 +2784,104 @@ if (presetPickerModal) {
     });
 }
 
+if (presetSaveCancel) {
+    presetSaveCancel.addEventListener("click", closePresetSaveModal);
+}
+
+if (presetSaveCloseIcon) {
+    presetSaveCloseIcon.addEventListener("click", closePresetSaveModal);
+}
+
+if (presetSaveModal) {
+    presetSaveModal.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (event.target === presetSaveModal) {
+            closePresetSaveModal();
+        }
+    });
+}
+
+if (confirmModalCancel) {
+    confirmModalCancel.addEventListener("click", () => {
+        closeConfirmModal(false);
+    });
+}
+
+if (confirmModalCloseIcon) {
+    confirmModalCloseIcon.addEventListener("click", () => {
+        closeConfirmModal(false);
+    });
+}
+
+if (confirmModalConfirm) {
+    confirmModalConfirm.addEventListener("click", () => {
+        closeConfirmModal(true);
+    });
+}
+
+if (confirmModal) {
+    confirmModal.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (event.target === confirmModal) {
+            closeConfirmModal(false);
+        }
+    });
+}
+
+if (presetSaveNameInput) {
+    presetSaveNameInput.addEventListener("input", () => {
+        pendingPresetOverwriteId = "";
+        if (presetSaveWarning) {
+            presetSaveWarning.textContent = "";
+            presetSaveWarning.classList.add("is-hidden");
+        }
+        if (presetSaveConfirm) {
+            presetSaveConfirm.textContent = "Save preset";
+        }
+    });
+}
+
+if (presetSaveForm) {
+    presetSaveForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const name = String((presetSaveNameInput && presetSaveNameInput.value) || "").trim();
+        if (!name) {
+            if (presetSaveWarning) {
+                presetSaveWarning.textContent = "Preset name cannot be empty.";
+                presetSaveWarning.classList.remove("is-hidden");
+            }
+            if (presetSaveNameInput) {
+                presetSaveNameInput.focus();
+            }
+            return;
+        }
+
+        const saveResult = savePresetByName(
+            pendingPresetProjectId,
+            name,
+            Boolean(pendingPresetOverwriteId)
+        );
+
+        if (saveResult.status === "needs-overwrite") {
+            pendingPresetOverwriteId = saveResult.existingId || "";
+            if (presetSaveWarning) {
+                presetSaveWarning.textContent = "Preset name exists. Submit again to overwrite it.";
+                presetSaveWarning.classList.remove("is-hidden");
+            }
+            if (presetSaveConfirm) {
+                presetSaveConfirm.textContent = "Overwrite preset";
+            }
+            return;
+        }
+
+        if (saveResult.status === "error") {
+            return;
+        }
+
+        closePresetSaveModal();
+    });
+}
+
 if (editorMenu) {
     editorMenu.addEventListener("click", (event) => {
         const actionBtn = event.target.closest("[data-editor-action]");
@@ -2659,6 +2892,33 @@ if (editorMenu) {
         const action = actionBtn.getAttribute("data-editor-action");
         if (action === "apply-preset") {
             applyPresetToCurrentProject();
+        }
+        if (action === "save-preset") {
+            if (!activeProjectId) {
+                showError("Select a project first before saving a preset.");
+            } else {
+                saveProjectAsPreset(activeProjectId);
+            }
+        }
+        if (action === "duplicate") {
+            if (!activeProjectId) {
+                showError("Select a project first before duplicating.");
+            } else {
+                duplicateProjectById(activeProjectId)
+                    .then(() => {
+                        clearError();
+                    })
+                    .catch(() => {
+                        showError("Could not duplicate project.");
+                    });
+            }
+        }
+        if (action === "delete-project") {
+            if (!activeProjectId) {
+                showError("Select a project first before deleting.");
+            } else {
+                deleteProjectById(activeProjectId);
+            }
         }
 
         editorMenu.removeAttribute("open");
@@ -2691,6 +2951,10 @@ if (importBundleZipBtn && importZipInput) {
 
 projectList.addEventListener("click", (event) => {
     event.stopPropagation();
+
+    if (event.target.closest(".drag-handle")) {
+        return;
+    }
 
     const menuButton = event.target.closest("[data-action]");
     if (menuButton) {
@@ -2759,6 +3023,10 @@ projectList.addEventListener("click", (event) => {
 projectList.addEventListener("keydown", (event) => {
     event.stopPropagation();
 
+    if (event.target.closest("button, summary, a, input, select, textarea")) {
+        return;
+    }
+
     const item = event.target.closest(".project-item");
     if (!item) {
         return;
@@ -2784,7 +3052,7 @@ document.addEventListener("click", (event) => {
         return;
     }
 
-    if (event.target.closest("#presetPickerModal") || event.target.closest("#historyModal")) {
+    if (event.target.closest("#presetPickerModal") || event.target.closest("#historyModal") || event.target.closest("#presetSaveModal") || event.target.closest("#confirmModal")) {
         return;
     }
 
@@ -2808,6 +3076,16 @@ document.addEventListener("keydown", (event) => {
         return;
     }
 
+    if (presetSaveModal && !presetSaveModal.classList.contains("is-hidden")) {
+        closePresetSaveModal();
+        return;
+    }
+
+    if (confirmModal && !confirmModal.classList.contains("is-hidden")) {
+        closeConfirmModal(false);
+        return;
+    }
+
     if (presetPickerModal && !presetPickerModal.classList.contains("is-hidden")) {
         closePresetPickerModal();
         return;
@@ -2828,35 +3106,102 @@ projectList.addEventListener("dragstart", (event) => {
     if (!item) {
         return;
     }
+
+    const projectId = item.getAttribute("data-id") || "";
+    if (!projectId || dragHandleProjectId !== projectId) {
+        event.preventDefault();
+        return;
+    }
+
     draggingProjectId = item.getAttribute("data-id") || "";
+    dragOrderDirty = false;
     item.classList.add("dragging");
+    item.setAttribute("aria-grabbed", "true");
     event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", draggingProjectId);
 });
+
+function clearProjectDragState() {
+    draggingProjectId = "";
+    dragHandleProjectId = "";
+    dragOrderDirty = false;
+    projectList.querySelectorAll(".project-item.dragging").forEach((item) => {
+        item.classList.remove("dragging");
+        item.removeAttribute("aria-grabbed");
+    });
+}
 
 projectList.addEventListener("dragover", (event) => {
     const item = event.target.closest(".project-item");
-    if (!item) {
+    if (!item || !draggingProjectId) {
         return;
     }
+
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
+
+    const targetId = item.getAttribute("data-id") || "";
+    if (!targetId || targetId === draggingProjectId) {
+        return;
+    }
+
+    const rect = item.getBoundingClientRect();
+    const placeAfter = event.clientY > rect.top + rect.height / 2;
+    const didMove = moveProject(draggingProjectId, targetId, placeAfter, false, false);
+
+    if (didMove) {
+        dragOrderDirty = true;
+        const draggedItem = projectList.querySelector('.project-item[data-id="' + draggingProjectId + '"]');
+        if (draggedItem) {
+            draggedItem.classList.add("dragging");
+            draggedItem.setAttribute("aria-grabbed", "true");
+        }
+    }
 });
 
 projectList.addEventListener("drop", (event) => {
     const item = event.target.closest(".project-item");
-    if (!item) {
+    if (!item || !draggingProjectId) {
+        clearProjectDragState();
         return;
     }
     event.preventDefault();
-    const targetId = item.getAttribute("data-id") || "";
-    moveProject(draggingProjectId, targetId);
+    if (dragOrderDirty) {
+        showStatus("Project order updated.");
+        schedulePersistSessionState();
+    }
+    clearProjectDragState();
 });
 
 projectList.addEventListener("dragend", () => {
-    draggingProjectId = "";
-    projectList.querySelectorAll(".project-item.dragging").forEach((item) => {
-        item.classList.remove("dragging");
-    });
+    clearProjectDragState();
+});
+
+document.addEventListener("drop", () => {
+    if (draggingProjectId) {
+        clearProjectDragState();
+    }
+});
+
+document.addEventListener("dragend", () => {
+    if (draggingProjectId) {
+        clearProjectDragState();
+    }
+});
+
+projectList.addEventListener("mousedown", (event) => {
+    const handle = event.target.closest(".drag-handle");
+    if (!handle) {
+        return;
+    }
+    const item = handle.closest(".project-item");
+    dragHandleProjectId = item ? (item.getAttribute("data-id") || "") : "";
+});
+
+projectList.addEventListener("mouseup", () => {
+    if (!draggingProjectId) {
+        dragHandleProjectId = "";
+    }
 });
 
 byId("exportPdf").addEventListener("click", () => {
@@ -2895,9 +3240,16 @@ if (importZipInput) {
             return;
         }
 
-        if (projects.length && !window.confirm("This will overwrite your current projects. Continue?")) {
-            importZipInput.value = "";
-            return;
+        if (projects.length) {
+            const shouldOverwrite = await openConfirmModal({
+                title: "Import Bundle",
+                message: "This will overwrite your current projects. Continue?",
+                confirmText: "Import and overwrite"
+            });
+            if (!shouldOverwrite) {
+                importZipInput.value = "";
+                return;
+            }
         }
 
         clearError();
