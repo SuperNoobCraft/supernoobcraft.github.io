@@ -527,7 +527,12 @@ function setupCustomSelects() {
             return;
         }
         const safeIndex = Math.max(0, Math.min(index, options.length - 1));
-        options[safeIndex].focus();
+        const target = options[safeIndex];
+        try {
+            target.focus({ preventScroll: true });
+        } catch (error) {
+            target.focus();
+        }
     }
 
     selectElements.forEach((selectEl, selectIndex) => {
@@ -639,7 +644,11 @@ function setupCustomSelects() {
             if (opening) {
                 const selectedNode = list.querySelector(".custom-select-option.is-selected") || list.querySelector(".custom-select-option");
                 if (selectedNode) {
-                    selectedNode.focus();
+                    try {
+                        selectedNode.focus({ preventScroll: true });
+                    } catch (error) {
+                        selectedNode.focus();
+                    }
                 }
             }
         });
@@ -692,7 +701,6 @@ function setupCustomSelects() {
     });
 
     window.addEventListener("resize", () => closeAllCustomSelects(null), { passive: true });
-    window.addEventListener("scroll", () => closeAllCustomSelects(null), { passive: true });
 }
 
 function sanitize(text) {
@@ -942,31 +950,34 @@ function extractSkillsFromProject(data) {
 }
 
 function buildSkillsSummaryHtml(allProjects) {
-    const skillCounts = {};
-    
-    allProjects.forEach(projectRecord => {
+    const skillSets = {};
+
+    allProjects.forEach((projectRecord) => {
         const skills = extractSkillsFromProject(projectRecord.data);
         Object.entries(skills).forEach(([category, keywords]) => {
-            if (!skillCounts[category]) skillCounts[category] = {};
-            keywords.forEach(skill => {
-                skillCounts[category][skill] = (skillCounts[category][skill] || 0) + 1;
+            if (!skillSets[category]) {
+                skillSets[category] = new Set();
+            }
+            keywords.forEach((skill) => {
+                skillSets[category].add(skill);
             });
         });
     });
-    
-    if (Object.keys(skillCounts).length === 0) return "";
-    
-    const sections = Object.entries(skillCounts).map(([category, skills]) => {
-        const items = Object.entries(skills)
-            .sort((a, b) => b[1] - a[1])
-            .map(([skill, count]) => {
-                const badge = count > 1 ? "<span class=\"skill-badge\" title=\"Used in " + count + " project(s)\">" + count + "</span>" : "";
-                return "<li>" + sanitize(skill) + badge + "</li>";
+
+    if (Object.keys(skillSets).length === 0) {
+        return "";
+    }
+
+    const sections = Object.entries(skillSets)
+        .map(([category, skills]) => {
+            const items = Array.from(skills)
+                .sort((a, b) => a.localeCompare(b))
+                .map((skill) => "<li>" + sanitize(skill) + "</li>")
+                .join("");
+            return "<h4>" + sanitize(category) + "</h4><ul class=\"skills-list\">" + items + "</ul>";
             })
-            .join("");
-        return "<h4>" + sanitize(category) + "</h4><ul class=\"skills-list\">" + items + "</ul>";
-    }).join("");
-    
+        .join("");
+
     return section("Skills Summary", sections, true);
 }
 

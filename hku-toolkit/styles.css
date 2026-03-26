@@ -1224,6 +1224,7 @@ button.primary:hover {
 
 .summary-header h3 {
     margin: 0;
+    color: var(--item-strong, var(--preview-strong));
     border: none;
     padding: 0;
 }
@@ -1249,6 +1250,7 @@ button.primary:hover {
 
 .portfolio-header {
     border: 1px solid var(--item-line-soft, var(--preview-line-soft));
+    border-left: 3px solid var(--item-strong, var(--preview-strong));
     border-radius: 12px;
     padding: 0.75rem 0.8rem;
     margin-bottom: 0.75rem;
@@ -1280,6 +1282,7 @@ button.primary:hover {
 
 .project-sheet {
     border: 1px solid var(--item-line-soft, var(--preview-line-soft));
+    border-left: 3px solid var(--item-strong, var(--preview-strong));
     border-radius: 12px;
     padding: 0.75rem;
     margin-bottom: 0.8rem;
@@ -1418,6 +1421,43 @@ button.primary:hover {
 
 .project-sheet[data-item-theme="outdoor"] {
     box-shadow: inset 4px 0 0 color-mix(in srgb, var(--item-strong, var(--strong)) 38%, transparent);
+}
+
+.portfolio-header[data-item-theme="academic"],
+.project-sheet[data-item-theme="academic"] {
+    border-left-style: double;
+    border-left-width: 4px;
+}
+
+.portfolio-header[data-item-theme="tech"],
+.project-sheet[data-item-theme="tech"] {
+    border-left-style: solid;
+    border-left-width: 4px;
+}
+
+.portfolio-header[data-item-theme="artistic"],
+.project-sheet[data-item-theme="artistic"] {
+    border-left-style: dashed;
+    border-left-width: 4px;
+}
+
+.portfolio-header[data-item-theme="science"],
+.project-sheet[data-item-theme="science"] {
+    border-left-style: solid;
+    border-top: 2px solid var(--item-strong, var(--strong));
+}
+
+.portfolio-header[data-item-theme="outdoor"],
+.project-sheet[data-item-theme="outdoor"] {
+    border-left-style: dotted;
+    border-left-width: 4px;
+}
+
+.portfolio-header[data-item-theme="minimalist"],
+.project-sheet[data-item-theme="minimalist"] {
+    border-left-color: #222;
+    border-left-style: solid;
+    border-left-width: 3px;
 }
 
 .footer-note {
@@ -1721,6 +1761,7 @@ button.primary:hover {
 
     .portfolio-header {
         border: 1px solid var(--item-line-soft, var(--line-soft));
+        border-left: 3px solid var(--item-strong, var(--strong));
         border-radius: 6px;
         padding: 0.35rem 0.45rem;
         margin: 0 0 3mm;
@@ -1746,6 +1787,7 @@ button.primary:hover {
 
     .project-sheet {
         border: 1px solid var(--item-line-soft, var(--line-soft));
+        border-left: 3px solid var(--item-strong, var(--strong));
         border-radius: 6px;
         padding: 0.35rem;
         margin: 0 0 4mm;
@@ -1769,6 +1811,7 @@ button.primary:hover {
     .summary-header h3 {
         font-size: 14pt;
         line-height: 1.1;
+        color: var(--item-strong, var(--strong));
     }
 
     .profile-corner {
@@ -1810,6 +1853,7 @@ button.primary:hover {
     .summary-section h3 {
         font-size: 9.6pt;
         margin: 0 0 0.15rem;
+        color: var(--item-strong, var(--strong));
     }
 
     .summary-section .summary-body {
@@ -1832,5 +1876,42 @@ button.primary:hover {
 
     .project-sheet.compact-print .summary-section.optional {
         display: none;
+    }
+
+    .portfolio-header[data-item-theme="academic"],
+    .project-sheet[data-item-theme="academic"] {
+        border-left-style: double;
+        border-left-width: 4px;
+    }
+
+    .portfolio-header[data-item-theme="tech"],
+    .project-sheet[data-item-theme="tech"] {
+        border-left-style: solid;
+        border-left-width: 4px;
+    }
+
+    .portfolio-header[data-item-theme="artistic"],
+    .project-sheet[data-item-theme="artistic"] {
+        border-left-style: dashed;
+        border-left-width: 4px;
+    }
+
+    .portfolio-header[data-item-theme="science"],
+    .project-sheet[data-item-theme="science"] {
+        border-left-style: solid;
+        border-top: 2px solid var(--item-strong, var(--strong));
+    }
+
+    .portfolio-header[data-item-theme="outdoor"],
+    .project-sheet[data-item-theme="outdoor"] {
+        border-left-style: dotted;
+        border-left-width: 4px;
+    }
+
+    .portfolio-header[data-item-theme="minimalist"],
+    .project-sheet[data-item-theme="minimalist"] {
+        border-left-color: #222;
+        border-left-style: solid;
+        border-left-width: 3px;
     }
 }
