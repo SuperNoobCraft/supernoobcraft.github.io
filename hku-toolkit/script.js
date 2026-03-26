@@ -201,14 +201,6 @@ const ITEM_THEMES = {
     },
     minimalist: {
         "--item-surface": "#ffffff",
-        "--item-strong": "#3f3f3f",
-        "--item-muted": "#555555",
-        "--item-line-soft": "#cfcfcf",
-        "--item-line-soft-2": "#e2e2e2",
-        "--item-surface-soft-2": "#f7f7f7"
-    },
-    print: {
-        "--item-surface": "#ffffff",
         "--item-strong": "#222222",
         "--item-muted": "#333333",
         "--item-line-soft": "#8d8d8d",
@@ -503,6 +495,206 @@ function byId(id) {
     return document.getElementById(id);
 }
 
+function setupCustomSelects() {
+    const selectElements = Array.from(document.querySelectorAll("select"));
+    if (!selectElements.length) {
+        return;
+    }
+
+    const wrappers = [];
+
+    function closeAllCustomSelects(exceptWrapper = null) {
+        wrappers.forEach((wrapper) => {
+            if (wrapper === exceptWrapper) {
+                return;
+            }
+            wrapper.classList.remove("is-open");
+            const trigger = wrapper.querySelector(".custom-select-trigger");
+            if (trigger) {
+                trigger.setAttribute("aria-expanded", "false");
+            }
+        });
+    }
+
+    function triggerSyntheticEvents(selectEl) {
+        selectEl.dispatchEvent(new Event("input", { bubbles: true }));
+        selectEl.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    function focusOptionAtIndex(wrapper, index) {
+        const options = Array.from(wrapper.querySelectorAll(".custom-select-option:not(.is-disabled)"));
+        if (!options.length) {
+            return;
+        }
+        const safeIndex = Math.max(0, Math.min(index, options.length - 1));
+        options[safeIndex].focus();
+    }
+
+    selectElements.forEach((selectEl, selectIndex) => {
+        if (selectEl.classList.contains("custom-select-native")) {
+            return;
+        }
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "custom-select";
+        wrapper.dataset.customSelectId = "custom-select-" + selectIndex;
+
+        const trigger = document.createElement("button");
+        trigger.type = "button";
+        trigger.className = "custom-select-trigger";
+        trigger.setAttribute("aria-haspopup", "listbox");
+        trigger.setAttribute("aria-expanded", "false");
+
+        const list = document.createElement("ul");
+        list.className = "custom-select-list";
+        list.setAttribute("role", "listbox");
+
+        const labelSpan = document.createElement("span");
+        trigger.appendChild(labelSpan);
+
+        function syncFromSelect() {
+            const selectedText = selectEl.options[selectEl.selectedIndex]
+                ? selectEl.options[selectEl.selectedIndex].textContent || ""
+                : "";
+            labelSpan.textContent = selectedText;
+
+            Array.from(list.querySelectorAll(".custom-select-option")).forEach((node) => {
+                const isSelected = node.getAttribute("data-value") === selectEl.value;
+                node.classList.toggle("is-selected", isSelected);
+                node.setAttribute("aria-selected", isSelected ? "true" : "false");
+            });
+        }
+
+        Array.from(selectEl.options).forEach((option) => {
+            const optionNode = document.createElement("li");
+            optionNode.className = "custom-select-option";
+            optionNode.setAttribute("role", "option");
+            optionNode.setAttribute("tabindex", "-1");
+            optionNode.setAttribute("data-value", option.value);
+            optionNode.textContent = option.textContent || "";
+
+            if (option.disabled) {
+                optionNode.classList.add("is-disabled");
+                optionNode.setAttribute("aria-disabled", "true");
+            }
+
+            optionNode.addEventListener("click", () => {
+                if (option.disabled) {
+                    return;
+                }
+                selectEl.value = option.value;
+                syncFromSelect();
+                triggerSyntheticEvents(selectEl);
+                wrapper.classList.remove("is-open");
+                trigger.setAttribute("aria-expanded", "false");
+                trigger.focus();
+            });
+
+            optionNode.addEventListener("keydown", (event) => {
+                const activeOptions = Array.from(list.querySelectorAll(".custom-select-option:not(.is-disabled)"));
+                const activeIndex = activeOptions.indexOf(optionNode);
+
+                if (event.key === "ArrowDown") {
+                    event.preventDefault();
+                    focusOptionAtIndex(wrapper, activeIndex + 1);
+                    return;
+                }
+                if (event.key === "ArrowUp") {
+                    event.preventDefault();
+                    focusOptionAtIndex(wrapper, activeIndex - 1);
+                    return;
+                }
+                if (event.key === "Home") {
+                    event.preventDefault();
+                    focusOptionAtIndex(wrapper, 0);
+                    return;
+                }
+                if (event.key === "End") {
+                    event.preventDefault();
+                    focusOptionAtIndex(wrapper, activeOptions.length - 1);
+                    return;
+                }
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    optionNode.click();
+                    return;
+                }
+                if (event.key === "Escape") {
+                    event.preventDefault();
+                    wrapper.classList.remove("is-open");
+                    trigger.setAttribute("aria-expanded", "false");
+                    trigger.focus();
+                }
+            });
+
+            list.appendChild(optionNode);
+        });
+
+        trigger.addEventListener("click", () => {
+            const opening = !wrapper.classList.contains("is-open");
+            closeAllCustomSelects(opening ? wrapper : null);
+            wrapper.classList.toggle("is-open", opening);
+            trigger.setAttribute("aria-expanded", opening ? "true" : "false");
+
+            if (opening) {
+                const selectedNode = list.querySelector(".custom-select-option.is-selected") || list.querySelector(".custom-select-option");
+                if (selectedNode) {
+                    selectedNode.focus();
+                }
+            }
+        });
+
+        trigger.addEventListener("keydown", (event) => {
+            if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                event.preventDefault();
+                if (!wrapper.classList.contains("is-open")) {
+                    closeAllCustomSelects(wrapper);
+                    wrapper.classList.add("is-open");
+                    trigger.setAttribute("aria-expanded", "true");
+                }
+                const activeOptions = Array.from(list.querySelectorAll(".custom-select-option:not(.is-disabled)"));
+                const selectedNode = list.querySelector(".custom-select-option.is-selected");
+                const selectedIndex = Math.max(0, activeOptions.indexOf(selectedNode));
+                const nextIndex = event.key === "ArrowDown" ? selectedIndex + 1 : selectedIndex - 1;
+                focusOptionAtIndex(wrapper, nextIndex);
+                return;
+            }
+
+            if (event.key === "Escape" && wrapper.classList.contains("is-open")) {
+                event.preventDefault();
+                wrapper.classList.remove("is-open");
+                trigger.setAttribute("aria-expanded", "false");
+            }
+        });
+
+        selectEl.addEventListener("change", syncFromSelect);
+
+        selectEl.parentNode.insertBefore(wrapper, selectEl);
+        selectEl.classList.add("custom-select-native");
+        wrapper.appendChild(selectEl);
+        wrapper.appendChild(trigger);
+        wrapper.appendChild(list);
+
+        syncFromSelect();
+        wrappers.push(wrapper);
+    });
+
+    document.addEventListener("click", (event) => {
+        const wrapper = event.target.closest(".custom-select");
+        closeAllCustomSelects(wrapper || null);
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape") {
+            return;
+        }
+        closeAllCustomSelects(null);
+    });
+
+    window.addEventListener("resize", () => closeAllCustomSelects(null), { passive: true });
+    window.addEventListener("scroll", () => closeAllCustomSelects(null), { passive: true });
+}
+
 function sanitize(text) {
     return String(text)
         .replaceAll("&", "&amp;")
@@ -780,6 +972,9 @@ function buildSkillsSummaryHtml(allProjects) {
 
 function normalizeItemTheme(themeName) {
     const normalized = String(themeName || "").trim().toLowerCase();
+    if (normalized === "print") {
+        return "minimalist";
+    }
     return ITEM_THEMES[normalized] ? normalized : "tech";
 }
 
@@ -2471,6 +2666,27 @@ function startNewProject() {
     byId("courseCode").focus();
 }
 
+async function deleteDraftProject() {
+    const shouldDelete = await openConfirmModal({
+        title: "Delete Draft",
+        message: "Delete this unsaved draft project?",
+        confirmText: "Delete",
+        destructive: true
+    });
+    if (!shouldDelete) {
+        return;
+    }
+
+    clearFormFields();
+    activeProjectId = "";
+    setEditorOpen(false);
+    renderProjectList();
+    renderPreview();
+    clearError();
+    showStatus("Draft project deleted.");
+    schedulePersistSessionState();
+}
+
 async function deleteProjectById(projectId) {
     const target = projects.find((project) => project.id === projectId);
     const label = target ? (target.data.identity.projectTitle || target.data.identity.courseCode || "this project") : "this project";
@@ -2915,7 +3131,13 @@ if (editorMenu) {
         }
         if (action === "delete-project") {
             if (!activeProjectId) {
-                showError("Select a project first before deleting.");
+                if (editorOpen) {
+                    deleteDraftProject().catch(() => {
+                        showError("Could not delete draft project.");
+                    });
+                } else {
+                    showError("Select a project first before deleting.");
+                }
             } else {
                 deleteProjectById(activeProjectId);
             }
@@ -3096,8 +3318,12 @@ document.addEventListener("keydown", (event) => {
         return;
     }
 
-    document.querySelectorAll(".item-menu[open]").forEach((detailsEl) => {
+    document.querySelectorAll(".item-menu[open], .site-switcher[open]").forEach((detailsEl) => {
         detailsEl.removeAttribute("open");
+        const summary = detailsEl.querySelector("summary");
+        if (summary && typeof summary.focus === "function") {
+            summary.focus();
+        }
     });
 });
 
@@ -3267,6 +3493,7 @@ window.addEventListener("beforeunload", persistSessionState);
 window.addEventListener("resize", updateHeaderOffset);
 
 setEditorOpen(false);
+setupCustomSelects();
 setProfileFields({ name: "", email: "", phone: "", link: "", theme: "academic" });
 updateTeamFieldVisibility();
 initializeTheme();

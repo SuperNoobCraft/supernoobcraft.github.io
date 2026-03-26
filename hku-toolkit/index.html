@@ -24,7 +24,7 @@
     </head>
     <body>
         <a class="skip-link" href="#main-content">Skip to main content</a>
-        <header class="topbar">
+        <header class="topbar" role="banner">
             <div class="brand-group">
                 <details class="site-switcher">
                     <summary aria-label="Open site switcher" title="Open site switcher">
@@ -107,12 +107,11 @@
                                     Header theme
                                     <select id="profileTheme" name="profileTheme">
                                         <option value="academic" selected>Academic</option>
-                                        <option value="tech">Tech</option>
                                         <option value="artistic">Artistic</option>
-                                        <option value="science">Science</option>
-                                        <option value="outdoor">Outdoor</option>
                                         <option value="minimalist">Minimalist</option>
-                                        <option value="print">Print</option>
+                                        <option value="outdoor">Outdoor</option>
+                                        <option value="science">Science</option>
+                                        <option value="tech">Tech</option>
                                     </select>
                                 </label>
                             </div>
@@ -237,12 +236,11 @@
                                 Item theme
                                 <select id="projectTheme" name="projectTheme">
                                     <option value="academic">Academic</option>
-                                    <option value="tech" selected>Tech</option>
                                     <option value="artistic">Artistic</option>
-                                    <option value="science">Science</option>
-                                    <option value="outdoor">Outdoor</option>
                                     <option value="minimalist">Minimalist</option>
-                                    <option value="print">Print</option>
+                                    <option value="outdoor">Outdoor</option>
+                                    <option value="science">Science</option>
+                                    <option value="tech" selected>Tech</option>
                                 </select>
                             </label>
                         </div>
@@ -366,6 +364,7 @@
                 <article id="preview" class="preview-document"></article>
             </section>
         </main>
+        <footer class="footer-note no-print" aria-label="Site footer">© 2026 Jim Tze Lau — HKU Toolkit</footer>
         <div id="welcomeModal" class="modal-backdrop is-hidden" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
             <section class="modal-card">
                 <h2 id="welcomeTitle">Quick Start Guide</h2>

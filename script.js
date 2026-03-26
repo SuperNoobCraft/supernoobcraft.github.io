@@ -138,6 +138,20 @@
         }
     });
 
+    document.addEventListener("keydown", function (event) {
+        if (event.key !== "Escape") {
+            return;
+        }
+
+        document.querySelectorAll(".site-switcher[open]").forEach(function (detailsEl) {
+            detailsEl.removeAttribute("open");
+            const summary = detailsEl.querySelector("summary");
+            if (summary && typeof summary.focus === "function") {
+                summary.focus();
+            }
+        });
+    });
+
     if (printButton) {
         printButton.addEventListener("click", function () {
             window.print();

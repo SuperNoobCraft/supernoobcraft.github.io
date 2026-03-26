@@ -154,11 +154,18 @@ body {
     background: var(--bg-secondary);
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.15);
     z-index: 130;
+    opacity: 0;
+    transform: translateY(-4px) scale(0.985);
+    transform-origin: top left;
+    pointer-events: none;
+    transition: opacity 0.14s ease, transform 0.14s ease;
 }
 
 .site-switcher[open] .site-switcher-menu {
     animation: quick-menu-in 0.12s ease-out;
-    transform-origin: top left;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
 }
 
 .site-switcher-menu a {
@@ -232,6 +239,13 @@ body {
     background: var(--bg-secondary);
     box-shadow: 0 0 16px rgba(0, 0, 0, 0.08);
     padding: 24px 30px 28px;
+}
+
+.footer-note {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.86rem;
+    padding: 0.25rem 1rem 1.1rem;
 }
 /* header */
 .header {
@@ -567,4 +581,11 @@ em {
     font-size: 0.78rem;
     color: var(--pill-text);
     white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .site-switcher-menu {
+        animation: none !important;
+        transition: none !important;
+    }
 }
