@@ -165,6 +165,16 @@
         });
     });
 
+    // Close menu when clicking outside
+    document.addEventListener("click", function (event) {
+        const switcher = event.target.closest(".site-switcher");
+        if (!switcher) {
+            document.querySelectorAll(".site-switcher[open]").forEach(function (detailsEl) {
+                detailsEl.removeAttribute("open");
+            });
+        }
+    });
+
     if (printButton) {
         printButton.addEventListener("click", function () {
             window.open("JimTzeLau_CV.pdf", "_blank", "noopener");
