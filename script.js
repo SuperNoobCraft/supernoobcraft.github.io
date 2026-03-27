@@ -167,7 +167,7 @@
 
     if (printButton) {
         printButton.addEventListener("click", function () {
-            window.print();
+            window.open("JimTzeLau_CV.pdf", "_blank", "noopener");
         });
     }
 
