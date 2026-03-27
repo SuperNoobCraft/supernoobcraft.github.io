@@ -1060,6 +1060,10 @@ input.not-inferred {
     background: color-mix(in srgb, var(--warn) 8%, var(--surface-soft-2) 92%);
 }
 
+input.not-inferred::placeholder {
+    color: color-mix(in srgb, var(--warn) 72%, var(--muted) 28%);
+}
+
 #undoDelete[aria-disabled="true"] {
     opacity: 0.6;
     cursor: not-allowed;

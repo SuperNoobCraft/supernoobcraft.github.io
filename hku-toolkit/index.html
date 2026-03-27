@@ -250,12 +250,12 @@
                         <legend>HKU Context</legend>
                         <div class="grid two">
                             <label>
-                                Faculty (inferred)
-                                <input id="faculty" name="faculty" readonly />
+                                Faculty (auto-detected, editable)
+                                <input id="faculty" name="faculty" placeholder="Auto-detected from course code, or type manually" />
                             </label>
                             <label>
-                                Department (inferred)
-                                <input id="department" name="department" readonly />
+                                Department (auto-detected, editable)
+                                <input id="department" name="department" placeholder="Auto-detected from course code, or type manually" />
                             </label>
                         </div>
                         <p id="inferenceNote" class="hint"></p>
@@ -342,7 +342,7 @@
                         <small>Images are stored locally in your browser for this site and included in ZIP bundle export/import.</small>
                         <ul id="evidenceList" class="file-list"></ul>
                         <div id="evidenceCaptionsSection" class="evidence-captions-section" style="display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
-                            <p><strong>Add captions to evidence files (optional)</strong></p>
+                            <p><strong>Add captions to evidence files</strong></p>
                             <div id="evidenceCaptions"></div>
                         </div>
                     </fieldset>

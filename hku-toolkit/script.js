@@ -778,27 +778,75 @@ function value(id) {
     return byId(id).value.trim();
 }
 
-function inferFromCourseCode(codeRaw) {
+const HKU_CONTEXT_FALLBACK_PLACEHOLDER = "Not inferred from course code. Enter manually.";
+
+function markHkuContextFieldManual(fieldEl) {
+    if (!fieldEl) {
+        return;
+    }
+
+    fieldEl.dataset.inferenceSource = "manual";
+    fieldEl.classList.remove("not-inferred");
+}
+
+function updateInferenceNoteFromCourseCode(codeRaw) {
     const code = (codeRaw || "").trim().toUpperCase();
     const prefix = code.slice(0, 4);
     const matched = PREFIX_MAP[prefix];
+    const hasFaculty = Boolean((byId("faculty").value || "").trim());
+    const hasDepartment = Boolean((byId("department").value || "").trim());
 
     if (matched) {
-        byId("faculty").value = matched.faculty;
-        byId("department").value = matched.department;
-        byId("faculty").classList.remove("not-inferred");
-        byId("department").classList.remove("not-inferred");
         inferenceNote.classList.remove("warn");
         inferenceNote.textContent = "HKU inference found from course prefix " + prefix + ".";
         return;
     }
 
-    byId("faculty").value = "Not inferred";
-    byId("department").value = "Not inferred";
-    byId("faculty").classList.add("not-inferred");
-    byId("department").classList.add("not-inferred");
-    inferenceNote.classList.add("warn");
+    if (prefix && hasFaculty && hasDepartment) {
+        inferenceNote.classList.remove("warn");
+        inferenceNote.textContent = "";
+        return;
+    }
+
+    inferenceNote.classList.toggle("warn", Boolean(prefix));
     inferenceNote.textContent = prefix ? "No local mapping for prefix " + prefix + ". You can still continue." : "";
+}
+
+function inferFromCourseCode(codeRaw) {
+    const facultyEl = byId("faculty");
+    const departmentEl = byId("department");
+    const code = (codeRaw || "").trim().toUpperCase();
+    const prefix = code.slice(0, 4);
+    const matched = PREFIX_MAP[prefix];
+
+    if (matched) {
+        if (!facultyEl.value.trim()) {
+            facultyEl.value = matched.faculty;
+            facultyEl.dataset.inferenceSource = "inferred";
+        }
+        if (!departmentEl.value.trim()) {
+            departmentEl.value = matched.department;
+            departmentEl.dataset.inferenceSource = "inferred";
+        }
+        facultyEl.classList.toggle("not-inferred", !facultyEl.value.trim());
+        departmentEl.classList.toggle("not-inferred", !departmentEl.value.trim());
+        facultyEl.placeholder = "Auto-detected from course code, or type manually";
+        departmentEl.placeholder = "Auto-detected from course code, or type manually";
+        updateInferenceNoteFromCourseCode(codeRaw);
+        return;
+    }
+
+    if (!facultyEl.value.trim()) {
+        facultyEl.dataset.inferenceSource = "";
+    }
+    if (!departmentEl.value.trim()) {
+        departmentEl.dataset.inferenceSource = "";
+    }
+    facultyEl.placeholder = HKU_CONTEXT_FALLBACK_PLACEHOLDER;
+    departmentEl.placeholder = HKU_CONTEXT_FALLBACK_PLACEHOLDER;
+    facultyEl.classList.toggle("not-inferred", !facultyEl.value.trim());
+    departmentEl.classList.toggle("not-inferred", !departmentEl.value.trim());
+    updateInferenceNoteFromCourseCode(codeRaw);
 }
 
 function buildEvidenceCaptionsUI(files) {
@@ -810,15 +858,22 @@ function buildEvidenceCaptionsUI(files) {
     
     const captions = activeProjectId ? currentEvidenceCaptions : draftEvidenceCaptions;
     const items = Array.from(files)
-        .filter(file => isImageFile(file))
-        .map(file => {
-            const caption = captions[file.name] || "";
+        .filter((file) => {
+            if (file && typeof file.type === "string") {
+                return file.type.startsWith("image/");
+            }
+            // Persisted entries may not always carry type metadata in legacy states.
+            return Boolean(file && file.name);
+        })
+        .map((file) => {
+            const fileName = file.name || "image";
+            const caption = captions[fileName] || "";
             return (
                 "<div class=\"caption-input-group\">" +
                 "<label style=\"font-size: 0.9em; margin-bottom: 0.3rem; display: block; font-weight: 500;\">" +
-                sanitize(file.name) +
+                sanitize(fileName) +
                 "</label>" +
-                "<input type=\"text\" class=\"caption-input\" data-filename=\"" + sanitize(file.name) + "\"" +
+                "<input type=\"text\" class=\"caption-input\" data-filename=\"" + sanitize(fileName) + "\"" +
                 " placeholder=\"e.g., 'Final UI mockup' or 'Test results screenshot'\" value=\"" + sanitize(caption) + "\" />" +
                 "</div>"
             );
@@ -829,7 +884,7 @@ function buildEvidenceCaptionsUI(files) {
     evidenceCaptionsSection.style.display = items ? "block" : "none";
     
     // Wire up caption updates
-    document.querySelectorAll(".caption-input").forEach(input => {
+    document.querySelectorAll(".caption-input").forEach((input) => {
         input.addEventListener("input", () => {
             const filename = input.getAttribute("data-filename");
             if (activeProjectId) {
@@ -844,12 +899,53 @@ function buildEvidenceCaptionsUI(files) {
     });
 }
 
+function normalizeEvidenceItem(item) {
+    if (!item) {
+        return null;
+    }
+
+    if (typeof item === "string") {
+        return { name: item, type: "image/*" };
+    }
+
+    if (typeof item === "object" && item.name) {
+        return {
+            name: String(item.name),
+            type: typeof item.type === "string" ? item.type : "image/*",
+            caption: typeof item.caption === "string" ? item.caption : "",
+            size: Number(item.size) || 0
+        };
+    }
+
+    return null;
+}
+
+function currentEvidenceItemsFromContext() {
+    if (evidenceSelectionTouched) {
+        return Array.from(evidenceInput.files || []);
+    }
+
+    if (!activeProjectId) {
+        return [];
+    }
+
+    const activeProject = projects.find((project) => project.id === activeProjectId);
+    const storedEvidence = activeProject && activeProject.data && Array.isArray(activeProject.data.evidence)
+        ? activeProject.data.evidence
+        : [];
+
+    return storedEvidence.map((item) => normalizeEvidenceItem(item)).filter(Boolean);
+}
+
 function listEvidenceNames() {
     evidenceList.innerHTML = "";
-    const files = Array.from(evidenceInput.files || []);
+    const files = currentEvidenceItemsFromContext();
     files.forEach((file) => {
         const li = document.createElement("li");
-        li.textContent = file.name + " (" + Math.round(file.size / 1024) + " KB)";
+        const hasSize = Number(file.size) > 0;
+        li.textContent = hasSize
+            ? file.name + " (" + Math.round(file.size / 1024) + " KB)"
+            : file.name + " (saved image)";
         evidenceList.appendChild(li);
     });
     
@@ -921,10 +1017,23 @@ function currentEvidenceNamesFromContext() {
 }
 
 function getCurrentEvidenceWithCaptions() {
-    const files = Array.from(evidenceInput.files || []).map((f) => f.name);
+    let files = [];
+    if (evidenceSelectionTouched) {
+        files = Array.from(evidenceInput.files || []).map((f) => f.name);
+    } else if (activeProjectId) {
+        const activeProject = projects.find((project) => project.id === activeProjectId);
+        const currentEvidence = activeProject && activeProject.data && Array.isArray(activeProject.data.evidence)
+            ? activeProject.data.evidence
+            : [];
+        files = currentEvidence
+            .map((item) => normalizeEvidenceItem(item))
+            .filter(Boolean)
+            .map((item) => item.name);
+    }
+
     const captions = activeProjectId ? currentEvidenceCaptions : draftEvidenceCaptions;
     
-    return files.map(filename => ({
+    return files.map((filename) => ({
         name: filename,
         caption: captions[filename] || ""
     }));
@@ -1656,6 +1765,19 @@ function loadEvidencePreviewUrlsForProject(projectId) {
     }
 
     return readProjectEvidenceEntries(projectId).then((entries) => {
+        const projectIndex = projects.findIndex((project) => project.id === projectId);
+        if (projectIndex >= 0) {
+            const existingEvidence = Array.isArray(projects[projectIndex].data.evidence)
+                ? projects[projectIndex].data.evidence
+                : [];
+            if (!existingEvidence.length && entries.length) {
+                projects[projectIndex].data.evidence = entries.map((entry) => ({
+                    name: entry.name || "image",
+                    caption: ""
+                }));
+            }
+        }
+
         const urls = entries
             .map((entry) => {
                 if (!entry || !(entry.blob instanceof Blob)) {
@@ -1665,6 +1787,11 @@ function loadEvidencePreviewUrlsForProject(projectId) {
             })
             .filter(Boolean);
         replaceEvidencePreviewUrlsForProject(projectId, urls);
+
+        if (activeProjectId === projectId && !evidenceSelectionTouched) {
+            listEvidenceNames();
+        }
+
         return urls;
     });
 }
@@ -1790,6 +1917,18 @@ function setFormData(data) {
 
     byId("lessons").value = data.reflection.lessons || "";
     byId("futureImprovements").value = data.reflection.futureImprovements || "";
+    byId("faculty").value = data.hkuContext.faculty || "";
+    byId("department").value = data.hkuContext.department || "";
+    byId("faculty").dataset.inferenceSource = data.hkuContext.faculty ? "manual" : "";
+    byId("department").dataset.inferenceSource = data.hkuContext.department ? "manual" : "";
+    byId("faculty").classList.toggle("not-inferred", !byId("faculty").value.trim());
+    byId("department").classList.toggle("not-inferred", !byId("department").value.trim());
+    byId("faculty").placeholder = byId("faculty").value.trim()
+        ? "Auto-detected from course code, or type manually"
+        : HKU_CONTEXT_FALLBACK_PLACEHOLDER;
+    byId("department").placeholder = byId("department").value.trim()
+        ? "Auto-detected from course code, or type manually"
+        : HKU_CONTEXT_FALLBACK_PLACEHOLDER;
     
     // Restore evidence captions
     currentEvidenceCaptions = {};
@@ -1804,9 +1943,10 @@ function setFormData(data) {
         });
     }
     
-    inferFromCourseCode(byId("courseCode").value);
+    updateInferenceNoteFromCourseCode(byId("courseCode").value);
     updateTeamFieldVisibility();
     syncAllCustomSelectUi();
+    listEvidenceNames();
 }
 
 function updateTeamFieldVisibility() {
@@ -1823,6 +1963,10 @@ function clearFormFields() {
     form.reset();
     byId("faculty").value = "";
     byId("department").value = "";
+    byId("faculty").dataset.inferenceSource = "";
+    byId("department").dataset.inferenceSource = "";
+    byId("faculty").placeholder = "Auto-detected from course code, or type manually";
+    byId("department").placeholder = "Auto-detected from course code, or type manually";
     byId("faculty").classList.remove("not-inferred");
     byId("department").classList.remove("not-inferred");
     inferenceNote.classList.remove("warn");
@@ -2697,6 +2841,8 @@ async function saveOrUpdateProject() {
         if (evidenceSelectionTouched) {
             await saveEvidenceFilesForProject(activeProjectId, evidenceInput.files || []);
         }
+        setFormData(projects[existingIndex].data);
+        setEditorOpen(true, "Editing selected project.");
         showStatus("Project updated in collection.");
     } else {
         const created = buildProjectRecord(outcome.data);
@@ -2707,15 +2853,32 @@ async function saveOrUpdateProject() {
         }
         await moveProjectEvidenceEntries(DRAFT_EVIDENCE_KEY, created.id);
         activeProjectId = created.id;
+        setFormData(created.data);
+        setEditorOpen(true, "Editing selected project.");
         showStatus("Project added to collection.");
     }
 
     evidenceSelectionTouched = false;
-    setEditorOpen(false);
-    clearFormFields();
-    activeProjectId = "";
+    setEditorOpen(false, "Create a new project or edit a selected one.");
     applySortMode(sortMode, false);
     schedulePersistSessionState();
+}
+
+async function persistActiveProjectBeforeSwitch(nextProjectId = "") {
+    if (!editorOpen || !activeProjectId || activeProjectId === nextProjectId) {
+        return;
+    }
+
+    const projectIndex = projects.findIndex((project) => project.id === activeProjectId);
+    if (projectIndex < 0) {
+        return;
+    }
+
+    projects[projectIndex] = buildProjectRecord(collectData(), activeProjectId);
+    if (evidenceSelectionTouched) {
+        await saveEvidenceFilesForProject(activeProjectId, evidenceInput.files || []);
+    }
+    evidenceSelectionTouched = false;
 }
 
 async function duplicateProjectById(projectId) {
@@ -2875,26 +3038,32 @@ function undoDeleteProject() {
 }
 
 function selectProjectById(projectId) {
-    const project = projects.find((item) => item.id === projectId);
-    if (!project) {
-        return;
-    }
+    const activateSelectedProject = () => {
+        const project = projects.find((item) => item.id === projectId);
+        if (!project) {
+            return;
+        }
 
-    activeProjectId = projectId;
-    evidenceSelectionTouched = false;
-    setDraftEvidencePreviewUrls([]);
-    setFormData(project.data);
-    setEditorOpen(true, "Editing selected project.");
-    loadEvidencePreviewUrlsForProject(projectId)
-        .then(() => {
-            if (activeProjectId === projectId) {
-                renderPreview();
-            }
-        })
-        .catch(() => {});
-    renderProjectList();
-    renderPreview();
-    schedulePersistSessionState();
+        activeProjectId = projectId;
+        evidenceSelectionTouched = false;
+        setDraftEvidencePreviewUrls([]);
+        setFormData(project.data);
+        setEditorOpen(true, "Editing selected project.");
+        loadEvidencePreviewUrlsForProject(projectId)
+            .then(() => {
+                if (activeProjectId === projectId) {
+                    renderPreview();
+                }
+            })
+            .catch(() => {});
+        renderProjectList();
+        renderPreview();
+        schedulePersistSessionState();
+    };
+
+    persistActiveProjectBeforeSwitch(projectId)
+        .then(activateSelectedProject)
+        .catch(activateSelectedProject);
 }
 
 function moveProject(draggedId, targetId, placeAfter = false, announce = true, persist = true) {
@@ -2942,6 +3111,26 @@ function moveProject(draggedId, targetId, placeAfter = false, announce = true, p
 
 byId("courseCode").addEventListener("input", (event) => {
     inferFromCourseCode(event.target.value);
+    if (editorOpen) {
+        renderPreview();
+        scheduleAutosaveActiveProjectEdit();
+    }
+    schedulePersistSessionState();
+});
+
+byId("faculty").addEventListener("input", (event) => {
+    markHkuContextFieldManual(event.target);
+    updateInferenceNoteFromCourseCode(byId("courseCode").value);
+    if (editorOpen) {
+        renderPreview();
+        scheduleAutosaveActiveProjectEdit();
+    }
+    schedulePersistSessionState();
+});
+
+byId("department").addEventListener("input", (event) => {
+    markHkuContextFieldManual(event.target);
+    updateInferenceNoteFromCourseCode(byId("courseCode").value);
     if (editorOpen) {
         renderPreview();
         scheduleAutosaveActiveProjectEdit();
