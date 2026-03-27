@@ -36,7 +36,15 @@
         );
     }
 
-    const THEME_KEY = "hkuProjectToolThemeV1";
+    function deriveStorageScope() {
+        const segments = window.location.pathname.split("/").filter(Boolean);
+        const scopeSeed = segments.length ? segments[0] : "root";
+        return scopeSeed.toLowerCase().replace(/[^a-z0-9_-]/g, "-");
+    }
+
+    const STORAGE_SCOPE = deriveStorageScope();
+    const LEGACY_THEME_KEY = "hkuProjectToolThemeV1";
+    const THEME_KEY = "supernoobThemeV1::" + STORAGE_SCOPE;
     let currentTheme = "light";
     let themeTransitionTimer = null;
 
@@ -65,7 +73,12 @@
 
     const getTheme = () => {
         try {
-            return localStorage.getItem(THEME_KEY) || "light";
+            const scoped = localStorage.getItem(THEME_KEY);
+            if (scoped === "dark" || scoped === "light") {
+                return scoped;
+            }
+            const legacy = localStorage.getItem(LEGACY_THEME_KEY);
+            return legacy === "dark" || legacy === "light" ? legacy : "light";
         } catch {
             return "light";
         }
@@ -105,7 +118,7 @@
 
         // Listen for theme changes from other tabs/windows
         window.addEventListener("storage", function (event) {
-            if (event.key === THEME_KEY && event.newValue) {
+            if ((event.key === THEME_KEY || event.key === LEGACY_THEME_KEY) && event.newValue) {
                 setTheme(event.newValue, true);
             }
         });
@@ -166,7 +179,7 @@
     const themeFromUrl = params.get("theme");
     if (themeFromUrl === "dark" || themeFromUrl === "light") {
         try {
-            localStorage.setItem("hkuProjectToolThemeV1", themeFromUrl);
+            localStorage.setItem(THEME_KEY, themeFromUrl);
         } catch {}
     }
     

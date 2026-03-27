@@ -52,13 +52,30 @@ const REQUIRED_FIELDS = [
 
 const JSON_START = "--- HKU_PROJECT_COLLECTION_JSON_START ---";
 const JSON_END = "--- HKU_PROJECT_COLLECTION_JSON_END ---";
-const SESSION_STORAGE_KEY = "hkuProjectToolSessionV1";
-const WELCOME_STORAGE_KEY = "hkuProjectToolWelcomeSeenV1";
-const PROJECT_PRESETS_STORAGE_KEY = "hkuProjectToolProjectPresetsV1";
-const VERSION_HISTORY_STORAGE_KEY = "hkuProjectToolVersionHistoryV1";
+const LEGACY_SESSION_STORAGE_KEY = "hkuProjectToolSessionV1";
+const LEGACY_WELCOME_STORAGE_KEY = "hkuProjectToolWelcomeSeenV1";
+const LEGACY_PROJECT_PRESETS_STORAGE_KEY = "hkuProjectToolProjectPresetsV1";
+const LEGACY_VERSION_HISTORY_STORAGE_KEY = "hkuProjectToolVersionHistoryV1";
+
+function deriveStorageScope() {
+    const segments = window.location.pathname.split("/").filter(Boolean);
+    const scopeSeed = segments.length ? segments[0] : "root";
+    return scopeSeed.toLowerCase().replace(/[^a-z0-9_-]/g, "-");
+}
+
+function scopedStorageKey(baseKey) {
+    return baseKey + "::" + STORAGE_SCOPE;
+}
+
+const STORAGE_SCOPE = deriveStorageScope();
+const SESSION_STORAGE_KEY = scopedStorageKey(LEGACY_SESSION_STORAGE_KEY);
+const WELCOME_STORAGE_KEY = scopedStorageKey(LEGACY_WELCOME_STORAGE_KEY);
+const PROJECT_PRESETS_STORAGE_KEY = scopedStorageKey(LEGACY_PROJECT_PRESETS_STORAGE_KEY);
+const VERSION_HISTORY_STORAGE_KEY = scopedStorageKey(LEGACY_VERSION_HISTORY_STORAGE_KEY);
 const VERSION_HISTORY_LIMIT = 20;
 const AUTO_HISTORY_INTERVAL_MS = 3 * 60 * 1000;
-const EVIDENCE_DB_NAME = "hkuToolkitEvidenceV1";
+const LEGACY_EVIDENCE_DB_NAME = "hkuToolkitEvidenceV1";
+const EVIDENCE_DB_NAME = scopedStorageKey(LEGACY_EVIDENCE_DB_NAME);
 const EVIDENCE_DB_VERSION = 1;
 const EVIDENCE_STORE_NAME = "projectEvidence";
 const DRAFT_EVIDENCE_KEY = "__draft__";
@@ -397,17 +414,11 @@ function setupWelcomeModal() {
     }
 
     let seen = "";
-    try {
-        seen = localStorage.getItem(WELCOME_STORAGE_KEY) || "";
-    } catch (error) {
-        seen = "";
-    }
+    seen = safeGetLocalStorageItem(WELCOME_STORAGE_KEY) || safeGetLocalStorageItem(LEGACY_WELCOME_STORAGE_KEY) || "";
 
     const dismiss = () => {
         welcomeModal.classList.add("is-hidden");
-        try {
-            localStorage.setItem(WELCOME_STORAGE_KEY, "1");
-        } catch (error) {}
+        safeSetLocalStorageItem(WELCOME_STORAGE_KEY, "1");
     };
 
     window.dismissWelcomeModal = dismiss;
@@ -493,6 +504,35 @@ function setupAutoHideTopbar() {
 
 function byId(id) {
     return document.getElementById(id);
+}
+
+function syncCustomSelectUiForSelect(selectEl) {
+    if (!selectEl) {
+        return;
+    }
+
+    const wrapper = selectEl.closest(".custom-select");
+    if (!wrapper) {
+        return;
+    }
+
+    const labelSpan = wrapper.querySelector(".custom-select-trigger span");
+    const selectedOption = selectEl.options[selectEl.selectedIndex];
+    if (labelSpan) {
+        labelSpan.textContent = selectedOption ? selectedOption.textContent || "" : "";
+    }
+
+    Array.from(wrapper.querySelectorAll(".custom-select-option")).forEach((node) => {
+        const isSelected = node.getAttribute("data-value") === selectEl.value;
+        node.classList.toggle("is-selected", isSelected);
+        node.setAttribute("aria-selected", isSelected ? "true" : "false");
+    });
+}
+
+function syncAllCustomSelectUi() {
+    document.querySelectorAll("select.custom-select-native").forEach((selectEl) => {
+        syncCustomSelectUiForSelect(selectEl);
+    });
 }
 
 function setupCustomSelects() {
@@ -999,7 +1039,7 @@ function itemThemeStyle(themeName) {
 
 function safeParseLocalStorage(key, fallbackValue) {
     try {
-        const raw = localStorage.getItem(key);
+        const raw = safeGetLocalStorageItem(key);
         if (!raw) {
             return fallbackValue;
         }
@@ -1007,6 +1047,37 @@ function safeParseLocalStorage(key, fallbackValue) {
     } catch (error) {
         return fallbackValue;
     }
+}
+
+function safeParseRawJson(raw, fallbackValue) {
+    try {
+        if (!raw) {
+            return fallbackValue;
+        }
+        return JSON.parse(raw);
+    } catch (error) {
+        return fallbackValue;
+    }
+}
+
+function safeGetLocalStorageItem(key) {
+    try {
+        return localStorage.getItem(key);
+    } catch (error) {
+        return "";
+    }
+}
+
+function safeSetLocalStorageItem(key, value) {
+    try {
+        localStorage.setItem(key, value);
+    } catch (error) {}
+}
+
+function safeRemoveLocalStorageItem(key) {
+    try {
+        localStorage.removeItem(key);
+    } catch (error) {}
 }
 
 function formatDateTimeLabel(isoString) {
@@ -1018,11 +1089,15 @@ function formatDateTimeLabel(isoString) {
 }
 
 function persistProjectPresets() {
-    localStorage.setItem(PROJECT_PRESETS_STORAGE_KEY, JSON.stringify(projectPresets));
+    safeSetLocalStorageItem(PROJECT_PRESETS_STORAGE_KEY, JSON.stringify(projectPresets));
 }
 
 function loadProjectPresets() {
-    const parsed = safeParseLocalStorage(PROJECT_PRESETS_STORAGE_KEY, []);
+    const raw = safeGetLocalStorageItem(PROJECT_PRESETS_STORAGE_KEY) || safeGetLocalStorageItem(LEGACY_PROJECT_PRESETS_STORAGE_KEY);
+    const parsed = safeParseRawJson(raw, []);
+    if (raw && !safeGetLocalStorageItem(PROJECT_PRESETS_STORAGE_KEY)) {
+        safeSetLocalStorageItem(PROJECT_PRESETS_STORAGE_KEY, raw);
+    }
     projectPresets = Array.isArray(parsed)
         ? parsed
               .filter((preset) => preset && preset.id && preset.name && preset.fields)
@@ -1263,11 +1338,15 @@ function applyPresetToCurrentProject() {
 }
 
 function persistVersionHistory() {
-    localStorage.setItem(VERSION_HISTORY_STORAGE_KEY, JSON.stringify(versionHistory));
+    safeSetLocalStorageItem(VERSION_HISTORY_STORAGE_KEY, JSON.stringify(versionHistory));
 }
 
 function loadVersionHistory() {
-    const parsed = safeParseLocalStorage(VERSION_HISTORY_STORAGE_KEY, []);
+    const raw = safeGetLocalStorageItem(VERSION_HISTORY_STORAGE_KEY) || safeGetLocalStorageItem(LEGACY_VERSION_HISTORY_STORAGE_KEY);
+    const parsed = safeParseRawJson(raw, []);
+    if (raw && !safeGetLocalStorageItem(VERSION_HISTORY_STORAGE_KEY)) {
+        safeSetLocalStorageItem(VERSION_HISTORY_STORAGE_KEY, raw);
+    }
     versionHistory = Array.isArray(parsed)
         ? parsed
               .filter((entry) => entry && entry.id && entry.state)
@@ -1668,11 +1747,21 @@ function collectData() {
     };
 }
 
+function cloneProjectData(data) {
+    if (typeof structuredClone === "function") {
+        try {
+            return structuredClone(data);
+        } catch (error) {}
+    }
+
+    return JSON.parse(JSON.stringify(data || createEmptyData()));
+}
+
 function buildProjectRecord(data, existingId = "") {
     return {
         id: existingId || (Date.now().toString(36) + Math.random().toString(36).slice(2, 7)),
         updatedAt: new Date().toISOString(),
-        data
+        data: cloneProjectData(data)
     };
 }
 
@@ -1717,6 +1806,7 @@ function setFormData(data) {
     
     inferFromCourseCode(byId("courseCode").value);
     updateTeamFieldVisibility();
+    syncAllCustomSelectUi();
 }
 
 function updateTeamFieldVisibility() {
@@ -1742,6 +1832,7 @@ function clearFormFields() {
     evidenceCaptions.innerHTML = "";
     currentEvidenceCaptions = {};
     draftEvidenceCaptions = {};
+    syncAllCustomSelectUi();
     setDraftEvidencePreviewUrls([]);
     deleteProjectEvidenceEntries(DRAFT_EVIDENCE_KEY).catch(() => {});
 }
@@ -1784,6 +1875,7 @@ function setProfileFields(profileData) {
     if (profileDisplayModeInput) {
         profileDisplayModeInput.value = safe.displayMode || "per-project";
     }
+    syncCustomSelectUiForSelect(profileThemeSelect);
     syncProfileDisplayToggle();
     profile = collectProfile();
 }
@@ -2432,7 +2524,7 @@ function persistSessionState() {
         profile: collectProfile(),
         draft: editorOpen ? collectData() : createEmptyData()
     };
-    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(snapshot));
+    safeSetLocalStorageItem(SESSION_STORAGE_KEY, JSON.stringify(snapshot));
     lastSavedAt = Date.now();
     updateAutosaveHint();
     maybeCaptureAutoHistory();
@@ -2501,7 +2593,8 @@ function scheduleAutosaveActiveProjectEdit() {
 }
 
 function restoreSessionState() {
-    const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+    const scopedRaw = safeGetLocalStorageItem(SESSION_STORAGE_KEY);
+    const raw = scopedRaw || safeGetLocalStorageItem(LEGACY_SESSION_STORAGE_KEY);
     if (!raw) {
         if (includeSkillsToggle) {
             includeSkillsSummary = includeSkillsToggle.checked;
@@ -2511,6 +2604,9 @@ function restoreSessionState() {
 
     try {
         const parsed = JSON.parse(raw);
+        if (!scopedRaw) {
+            safeSetLocalStorageItem(SESSION_STORAGE_KEY, raw);
+        }
         clearAllEvidencePreviewUrls();
         projects = Array.isArray(parsed.projects) ? parsed.projects : [];
         activeProjectId = parsed.activeProjectId || "";
@@ -2560,7 +2656,8 @@ function restoreSessionState() {
                 lastAutoHistorySignature = historyStateSignature();
             });
     } catch (error) {
-        localStorage.removeItem(SESSION_STORAGE_KEY);
+        safeRemoveLocalStorageItem(SESSION_STORAGE_KEY);
+        safeRemoveLocalStorageItem(LEGACY_SESSION_STORAGE_KEY);
     }
 }
 

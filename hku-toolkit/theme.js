@@ -1,6 +1,15 @@
 (function () {
-    const THEME_KEY = "hkuProjectToolThemeV1";
-    const THEME_COOKIE = "hkuProjectToolTheme";
+    function deriveStorageScope() {
+        const segments = window.location.pathname.split("/").filter(Boolean);
+        const scopeSeed = segments.length ? segments[0] : "root";
+        return scopeSeed.toLowerCase().replace(/[^a-z0-9_-]/g, "-");
+    }
+
+    const STORAGE_SCOPE = deriveStorageScope();
+    const LEGACY_THEME_KEY = "hkuProjectToolThemeV1";
+    const THEME_KEY = LEGACY_THEME_KEY + "::" + STORAGE_SCOPE;
+    const LEGACY_THEME_COOKIE = "hkuProjectToolTheme";
+    const THEME_COOKIE = LEGACY_THEME_COOKIE + "_" + STORAGE_SCOPE;
     const VALID_THEMES = new Set(["light", "dark"]);
     let themeTransitionTimer = null;
 
@@ -17,7 +26,11 @@
     function readThemeFromLocalStorage() {
         try {
             const saved = localStorage.getItem(THEME_KEY);
-            return isValidTheme(saved) ? saved : "";
+            if (isValidTheme(saved)) {
+                return saved;
+            }
+            const legacy = localStorage.getItem(LEGACY_THEME_KEY);
+            return isValidTheme(legacy) ? legacy : "";
         } catch (error) {
             return "";
         }
@@ -26,11 +39,17 @@
     function readThemeFromCookie() {
         const cookieParts = document.cookie.split(";").map((part) => part.trim());
         const pair = cookieParts.find((item) => item.startsWith(THEME_COOKIE + "="));
-        if (!pair) {
+        if (pair) {
+            const value = decodeURIComponent(pair.slice((THEME_COOKIE + "=").length));
+            return isValidTheme(value) ? value : "";
+        }
+
+        const legacyPair = cookieParts.find((item) => item.startsWith(LEGACY_THEME_COOKIE + "="));
+        if (!legacyPair) {
             return "";
         }
-        const value = decodeURIComponent(pair.slice((THEME_COOKIE + "=").length));
-        return isValidTheme(value) ? value : "";
+        const legacyValue = decodeURIComponent(legacyPair.slice((LEGACY_THEME_COOKIE + "=").length));
+        return isValidTheme(legacyValue) ? legacyValue : "";
     }
 
     function getPreferredTheme() {
@@ -108,7 +127,7 @@
         });
 
         window.addEventListener("storage", (event) => {
-            if (event.key === THEME_KEY && isValidTheme(event.newValue)) {
+            if ((event.key === THEME_KEY || event.key === LEGACY_THEME_KEY) && isValidTheme(event.newValue)) {
                 applyTheme(event.newValue, true);
                 updateToggleLabel(button);
             }
@@ -186,6 +205,7 @@
         applyTheme,
         persistTheme,
         getCurrentTheme,
-        THEME_KEY
+        THEME_KEY,
+        STORAGE_SCOPE
     };
 })();
