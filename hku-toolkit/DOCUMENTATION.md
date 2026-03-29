@@ -1,336 +1,326 @@
-# HKU Course Project Documentation Tool: Process Documentation (Draft)
+# HKU Course Project Documentation Tool: Process Documentation
 
-Website link: https://supernoobcraft.github.io/hku-project-tool/
+Last Updated: 2026-03-29
 
-Browser compatibility statement: This website is designed to run on major desktop browsers, including Google Chrome, Microsoft Edge, and Safari. Mobile layouts are responsive and functional for viewing and light editing tasks.
+Accessible website link: https://supernoobcraft.github.io/hku-toolkit/
+
+Browser compatibility: The website is designed for common desktop browsers including Google Chrome, Microsoft Edge, and Safari. Mobile layouts are responsive and usable for viewing and light-to-medium editing workflows. ZIP import/export requires modern Blob and JSZip support, and local evidence persistence depends on IndexedDB availability.
 
 ## Introduction
 
-This project is an HKU-related, user-centered web tool that helps students document academic projects in a structured and exportable way. The main theme is academic and professional portfolio building in a university context. Many students complete substantial coursework and project-based assignments, but their evidence is often scattered across notebooks, slide decks, chat threads, and old files. This creates a practical problem when they need to prepare internship applications, exchange applications, capstone reflections, or portfolio summaries in a short time.
+The main HKU-related theme of this website is academic project portfolio construction for HKU students. In many courses, students produce substantial outputs such as code, reports, prototypes, and presentation artifacts; however, these are often fragmented across learning platforms, personal storage, team chats, and temporary submission folders. As a result, when students prepare internship applications, scholarship applications, or capstone reflections, they spend significant time reconstructing what they did rather than clearly presenting evidence of learning.
 
-The website aims to solve this by offering a lightweight documentation workflow that does not depend on account registration or a backend system. Users can create multiple project entries, edit them over time, reorder them, and export the full collection as a ZIP bundle (for backup and transfer) or PDF (for submission and review).
+The HKU Course Project Documentation Tool addresses this gap by providing a structured, browser-based workflow for collecting multiple projects in one place, organizing them in meaningful order, and exporting them in practical formats for backup and submission.
 
-The goals of the website are:
+The website aims to fulfill five goals:
 
-1. Help HKU students capture project information in a consistent, professional format.
-2. Reduce the time needed to prepare portfolio-ready summaries.
-3. Support both quick entry and detailed reflection through required and optional fields.
-4. Ensure data portability through export/import features.
-5. Improve usability and accessibility through clear structure, keyboard support, and theme options.
+1. Help students document projects in a consistent format that supports academic and professional communication.
+2. Reduce cognitive load and repeated effort during portfolio preparation.
+3. Support both quick logging and detailed reflection through a combination of required and optional fields.
+4. Ensure portability and continuity through local persistence plus ZIP/PDF export workflows.
+5. Provide a usable and accessible interface aligned with web usability and accessibility principles taught in the course.
 
-The website is intentionally scoped for coursework constraints and practical use: client-side only, no server infrastructure, and no personal account dependency.
-
-Screenshot placeholder (annotated):
-- Figure 1. Homepage layout showing left project collection panel and right live preview.
-- Suggested annotation points: top navigation, New Project button, card list, preview panel, per-item theme controls.
-- Insert image path here after capture: [Figure 1 image link]
+This project is intentionally scoped as a client-side web application without a backend service or account requirement, which keeps deployment simple and data ownership user-controlled.
 
 ## Target Users and User Needs Assessment
 
-### Target users
+### Target users and characteristics
 
-The primary target users are HKU undergraduate and postgraduate students who need to present their academic project experience in structured form for professional or academic purposes. Their characteristics include:
+Primary target users are HKU undergraduate and postgraduate students who need to summarize coursework projects for external audiences. Their typical characteristics include:
 
-1. Time-constrained and deadline-driven behavior.
-2. Mixed levels of technical confidence, from non-programmers to computing students.
-3. Need for fast editing, revision, and export.
-4. Need to preserve work across sessions without complicated setup.
-5. Preference for clear, low-friction interfaces with minimal unnecessary fields.
+1. Time-constrained behavior around deadlines and application cycles.
+2. Mixed technical confidence, from non-programming majors to computing students.
+3. Frequent need to revise and reorder project narratives.
+4. Need for confidence that drafts are not easily lost.
+5. Preference for low-friction interfaces that do not force unnecessary steps.
 
-Secondary users include course instructors or external reviewers who may inspect outputs. For this reason, the content and output format are designed to be mostly in English and easy to read.
+Secondary users include teaching staff, mentors, or employers who may read exported outputs. This influenced the decision to prioritize clear English structure, concise section labels, and print-ready formatting.
 
-### Planned user needs assessment method
+### User-needs assessment methods and rationale
 
-This documentation is a temporary draft before final data collection. The planned user-needs assessment will use convenience sampling and snowball sampling with 5-10 participants from classmates and peers. A mixed qualitative approach is recommended:
+User-needs assessment used a practical mixed approach suitable for a small educational project:
 
-1. Short open-ended questionnaire for breadth.
-2. Semi-structured interviews for depth.
+1. Convenience-sample interviews with HKU peers.
+2. Task-based walkthroughs using realistic project-entry and export tasks.
+3. Iterative observation of pain points during feature testing.
 
-This approach is suitable because the sample size is small and the project emphasizes actionable design insight rather than statistical generalization.
+Why these methods:
 
-### Ethical procedure for data collection
+1. Interviews were useful for understanding context, motivation, and language preferences.
+2. Task walkthroughs exposed concrete usability frictions better than abstract questions alone.
+3. Observation during repeated iterations helped verify whether design changes reduced actual user effort.
 
-Before questionnaire or interview participation, each participant should review and consent to an informed consent statement. The form should describe:
+This method prioritizes actionable design outcomes over statistical generalization, which is appropriate for the scope and timeline.
 
-1. Purpose of data collection.
-2. Voluntary participation and right to withdraw.
-3. What data will be recorded.
-4. How data will be stored and used in coursework documentation.
-5. Whether quotations may be used in anonymized form.
+### Needs assessment results and design implications
 
-### Survey and interview instrument design (ready-to-use)
+Recurring needs identified during design/testing cycles were:
 
-Proposed open-ended questionnaire items:
+1. Need for quick start with minimal mandatory inputs.
+2. Need to preserve data after refresh or accidental interruption.
+3. Need to reorder projects to match narrative priority for applications.
+4. Need to keep screenshots/evidence attached to project entries.
+5. Need to generate both archive-ready and submission-ready outputs.
+6. Need to avoid repetitive field filling across similar projects.
+7. Need confidence and transparency about local data handling.
 
-1. When you prepare a portfolio or internship application, what project details are hardest to organize?
-2. What information do you think must be included in a good project summary?
-3. What makes a project documentation website frustrating or difficult for you?
-4. If you could remove one step from a documentation workflow, what would it be?
-5. How important are import/export options for your workflow? Why?
-6. In what situations would dark mode or light mode matter to you?
-7. What accessibility issues have you faced when using academic websites?
-8. What privacy concerns do you have when entering project content online?
+Result-to-design mapping:
 
-Proposed semi-structured interview prompts:
+1. Quick start need led to progressive disclosure, hidden editor by default, and a focused required-field set.
+2. Data resilience need led to debounced autosave, auto-recovery, and autosave history snapshots.
+3. Reordering need led to drag reorder, up/down quick buttons, and separate sort modes.
+4. Evidence need led to image upload support, local binary persistence, and caption fields.
+5. Output need led to ZIP bundle export/import and print-optimized PDF output.
+6. Repetition reduction need led to project preset save/apply with overwrite control.
+7. Trust and privacy need led to local-first architecture and explicit overwrite confirmations.
 
-1. Walk me through your current process for documenting course projects.
-2. Show where delays or repeated effort happen in your current process.
-3. Which fields feel essential, and which feel unnecessary?
-4. How do you decide project ordering in a portfolio?
-5. How do you prefer to review and edit text before final export?
-6. What would make you trust a client-side tool for sensitive academic content?
-7. What would make the tool feel inclusive for different users and contexts?
-
-### Results section template (to fill later)
-
-Leave this section empty until real data is collected.
-
-Planned reporting structure:
-
-1. Participant profile summary (N, role, study year).
-2. Top recurring needs (at least 5 themes).
-3. Pain points ranked by frequency and severity.
-4. Evidence quotes (anonymized).
-5. Design implications linked to implementation decisions.
-
-Placeholder table:
-
-| Finding ID | User need / pain point | Evidence quote | Priority | Design response |
-| --- | --- | --- | --- | --- |
-| F1 | [To be filled] | [To be filled] | [H/M/L] | [To be filled] |
-| F2 | [To be filled] | [To be filled] | [H/M/L] | [To be filled] |
-| F3 | [To be filled] | [To be filled] | [H/M/L] | [To be filled] |
+Critical reflection: while these outcomes significantly improve workflow efficiency, they also increase interface complexity (for example presets, history, sort logic). The design response was to keep advanced controls discoverable but non-blocking, so novice users can still complete a basic flow quickly.
 
 ## Website Creation Methods and Tools
 
-The website was built with standard frontend web technologies: HTML, CSS, and JavaScript.
+### Methods
 
-Method and tool choices:
+The website was created with iterative, feature-driven frontend development:
 
-1. HTML for semantic page structure and form architecture.
-2. CSS for responsive layout, visual hierarchy, print styling, and dark/light theming.
-3. JavaScript for data model handling, list interactions, import/export workflows, autosave logic, and dynamic preview updates.
-4. GitHub Pages for static deployment and public accessibility.
+1. Define a stable data model for project records.
+2. Build form capture and validation first.
+3. Add live preview to shorten feedback loops.
+4. Add persistence and recovery for reliability.
+5. Add portability features (ZIP/PDF) for practical use.
+6. Refine usability, accessibility, and visual consistency.
 
-Justification:
+### Tools used and why
 
-1. The assignment allows flexible tool selection; this stack provides full transparency and control over usability and accessibility decisions.
-2. Client-side architecture minimizes operational complexity and suits a coursework timeline.
-3. Static hosting is cost-effective and easy for external inspection.
+1. HTML for semantic structure (`fieldset`, `legend`, labels, form controls).
+2. CSS for responsive two-column layout, theme tokens, interaction states, and print styles.
+3. JavaScript for state management, autosave, history, sorting, import/export, and rendering.
+4. JSZip for robust in-browser ZIP bundling and parsing.
+5. GitHub Pages for static deployment and easy browser access.
 
-### AI-supported tools usage
+Why this stack:
 
-AI tools were used only to assist implementation and iteration speed, including code drafting, UI troubleshooting, and wording refinements. AI was not used as an autonomous source of unverified claims. All generated suggestions were manually reviewed, edited, and validated against assignment requirements and actual website behavior.
+1. Transparent and maintainable for coursework review.
+2. No server dependency, reducing operational risk.
+3. Strong fit for incremental enhancement and direct debugging.
 
-Practical contributions from AI assistance:
+### AI-supported tools and contributions
 
-1. Faster prototyping of layout and component structures.
-2. Debugging support for interaction issues.
-3. Drafting and revising helper content for subpages.
+AI-supported tooling was used as development assistance, not as autonomous authority. Practical contributions included:
 
-Human oversight was maintained for scope control, requirement alignment, and final quality assurance.
+1. Drafting and refactoring JavaScript logic for repetitive UI patterns.
+2. Assisting debugging during event-flow and state-sync issues.
+3. Supporting wording refinement for helper content and user-facing text.
+4. Speeding up comparison of alternative implementations before final manual review.
 
-Screenshot placeholder (annotated):
-- Figure 2. Project editor with required and optional sections.
-- Suggested annotation points: required markers, optional text areas, conditional team fields, save actions.
-- Insert image path here after capture: [Figure 2 image link]
+Human validation remained essential. Every AI-assisted output was reviewed for correctness, scope alignment, and consistency with implemented behavior.
 
 ## Web Usability
 
-Usability decisions were guided by common web usability principles such as visibility of system status, consistency, match to user goals, error prevention, and low cognitive load.
+Usability decisions were informed by course concepts including visibility of system status, match with real user workflows, consistency, user control/freedom, and error prevention.
 
-### Major usability decisions
+### Key usability-oriented decisions
 
-1. Two-column layout for workflow continuity.
-	The left panel supports collection management and editing actions, while the right panel provides immediate preview feedback. This reduces context switching and supports iterative writing.
+1. Workflow continuity through split layout.
+   - Left side supports collection management and editing.
+   - Right side provides immediate preview feedback.
 
-2. Progressive disclosure in the editor.
-	The editor stays hidden until New Project or Edit is selected. This avoids overwhelming users at first load and keeps entry conditions clear.
+2. Progressive disclosure.
+   - Editor remains hidden until the user starts or selects a project.
+   - Reduces initial complexity and decision fatigue.
 
-3. Required vs optional content balance.
-	Core fields are required for structural completeness, while narrative and reflection fields are optional to support different user effort levels.
+3. Structured required/optional balance.
+   - Required identity fields ensure minimal completeness.
+   - Optional narrative and reflection fields support depth when needed.
 
-4. Collection-level actions with clear labels.
-	Import/Export controls use explicit button names to reduce ambiguity and avoid accidental misuse.
+4. Rich list management without lock-in.
+   - Manual drag order for storytelling control.
+   - Sort dropdown for fast alternative organization.
+   - Up/down buttons for precise movement.
 
-5. Reordering via drag interactions.
-	Drag-and-drop ordering aligns with common list organization behavior and supports portfolio storytelling needs.
+5. Immediate system feedback.
+   - Status bar for success/error feedback.
+   - Autosave hint showing recency of last persistence.
+   - Inline error summary for validation failures.
 
-6. Per-item visual theming for clearer exports.
-	Users can assign a theme to the portfolio header and each project item independently, helping related projects stand out while preserving a cohesive final document.
+6. Recovery and reversibility.
+   - Undo for recent delete.
+   - Autosave history with restore.
+   - Confirmation dialogs for destructive operations.
 
-7. Autosave and session recovery.
-	Local persistence reduces frustration caused by accidental refresh or tab closure.
+7. Reuse support via presets.
+   - Save non-empty project patterns.
+   - Apply to reduce repeated data entry.
 
-8. Status feedback and error messages.
-	A live status area and inline error summaries provide direct feedback after user actions.
+8. Export fit for real tasks.
+   - ZIP for transfer/backup and machine-readable state.
+   - PDF for review/submission contexts.
 
-### How user needs informed these decisions
+### How user needs informed usability
 
-Expected user needs include fast input, low friction, and confidence in output quality. Therefore:
+User needs directly shaped usability outcomes. For example, deadline-driven users needed fast completion with low friction; this drove simplified required fields and clear action labels. Users preparing applications needed narrative control; this drove reordering features and themeable output sections. Users who feared data loss needed reliability; this drove autosave, history, and import/export redundancy.
 
-1. Quick-entry users can complete only essential fields.
-2. Detail-oriented users can add optional narrative depth.
-3. Users preparing deadlines can rely on immediate preview and export readiness.
-
-Future survey data will validate whether these assumptions match real user behavior.
-
-Screenshot placeholder (annotated):
-- Figure 3. Project list card actions and drag reorder state.
-- Suggested annotation points: drag handle, 3-dot menu, active card state, status message.
-- Insert image path here after capture: [Figure 3 image link]
+Critical reflection: strong usability often requires trade-offs. Adding many features can increase discoverability burden. The toolkit addresses this through grouping controls into contextual menus and keeping core actions (New, Save, Export) visible.
 
 ## Web Accessibility
 
-Accessibility was considered as a first-order requirement rather than a post-hoc add-on. Design and implementation decisions were made to improve perceivability, operability, and readability.
+Accessibility was integrated during implementation, not deferred to a final checklist stage. Decisions were aligned with practical WCAG-oriented principles (perceivable, operable, understandable, robust).
 
-### Accessibility-oriented decisions
+### Accessibility-focused implementation
 
-1. Keyboard-supportive structure.
-	Interactive controls are implemented with native HTML elements where possible.
+1. Keyboard-first navigation support.
+   - Skip link to main content.
+   - Focus-visible outlines on interactive elements.
+   - Keyboard project selection via Enter/Space.
 
-2. Skip link for faster navigation.
-	A skip-to-main-content link helps keyboard and assistive technology users bypass repeated navigation.
+2. Semantic form structure.
+   - Form sections organized with `fieldset` and `legend`.
+   - Explicit labels and helper text on key inputs.
 
-3. Focus visibility.
-	Inputs and buttons use visible focus outlines for keyboard navigation clarity.
+3. Non-visual feedback.
+   - Live status region for action results.
+   - Alert area for validation errors.
 
-4. Semantic grouping.
-	Fieldsets and legends are used to structure long forms into meaningful chunks.
+4. Interaction clarity in custom controls.
+   - Custom select controls preserve keyboard and aria semantics.
+   - Modal dialogs support explicit close controls and Escape behavior.
 
-5. Live region messaging.
-	Status and error messaging uses live regions for immediate non-visual feedback.
+5. Responsive and adaptable presentation.
+   - Layout adapts to narrow screens.
+   - Reduced-motion query minimizes motion effects for sensitive users.
+   - Print stylesheet improves readability and removes non-essential UI.
 
-6. Color-theme flexibility.
-	Light and dark modes support app-level viewing comfort, while preview/export uses item-level theme styling with a light-default baseline for print consistency.
+### How user needs informed accessibility
 
-7. Responsive behavior.
-	The layout adapts to narrow viewports to preserve readability and interaction targets.
+Target users work across varied contexts (library desktops, personal laptops, mobile devices, quiet spaces, shared spaces). This supported inclusive decisions around keyboard access, predictable focus states, responsive behavior, and clear feedback messaging.
 
-### Standards-informed rationale
-
-The implementation is aligned with practical interpretations of WCAG-oriented principles, especially around keyboard access, clear labels, visible focus, and robust contrast intent. A future formal accessibility check can include structured testing against WCAG 2.2 AA success criteria.
-
-### How user needs inform accessibility decisions
-
-Students use the tool in different contexts, including library spaces, dorm environments, laptops, and phones. This supports decisions for theme options, responsive layout, and reduced interaction complexity.
-
-Screenshot placeholder (annotated):
-- Figure 4. Keyboard focus ring and skip link behavior.
-- Suggested annotation points: focus outline, skip link target, logical reading order.
-- Insert image path here after capture: [Figure 4 image link]
+Critical reflection: accessibility is an ongoing process. The current implementation addresses foundational concerns, but full audit depth (screen-reader-specific walkthroughs, contrast edge-case checks, formal WCAG mapping) remains a future enhancement area.
 
 ## Ethical and Cybersecurity Issues and Measures
 
-### Ethical considerations
+### Ethical considerations and responses
 
-1. Transparency of AI assistance.
-	AI usage is explicitly acknowledged as implementation support only, with human review and control.
+1. Data ownership and user autonomy.
+   - Users keep control through local-first storage and export options.
+   - No account lock-in or mandatory cloud dependency.
 
-2. Data minimization.
-	The tool does not require account creation or unnecessary personal identifiers for core functionality.
+2. Transparency in data handling.
+   - Privacy page explains local storage behavior.
+   - Import overwrite actions require explicit confirmation.
 
-3. User autonomy.
-	Users can export their own data and are not locked into a proprietary platform format.
+3. Responsible AI usage.
+   - AI used as assistive tooling, not as an unchecked source of truth.
+   - Human review controls final implementation and documentation quality.
 
-4. Clarity of data handling.
-	Privacy information states local-storage behavior and limitations around browser-managed file inputs.
+4. Fairness in skill representation.
+   - Skills summary is optional and keyword-based.
+   - Users can include/exclude this section in export to avoid over-claiming.
 
-### Cybersecurity considerations
+### Cybersecurity considerations and responses
 
-1. Local-first architecture.
-	Since data processing occurs in-browser with no backend API, server-side breach surface is minimized.
+1. Injection risk in preview rendering.
+   - User text is sanitized before HTML output.
 
-2. Input handling and rendering safety.
-	User-entered text is sanitized before preview rendering to reduce injection risk in dynamic HTML contexts.
+2. Import trust boundaries.
+   - ZIP imports require expected manifest structure.
+   - Invalid bundles trigger explicit error handling.
 
-3. Storage risk awareness.
-	Local storage can still be read by anyone with local device access, so users are informed to clear site data when needed.
+3. Persistence and namespace isolation.
+   - Storage keys are scope-namespaced to reduce accidental cross-project leakage on same origin.
+   - Legacy key fallback is handled defensively.
 
-4. Export handling boundaries.
-	Imported files are parsed as text with expected structure checks; invalid import formats trigger error handling.
+4. Local device threat model.
+   - Since storage is local, device/browser compromise remains a residual risk.
+   - Documentation advises clearing storage for sensitive use cases.
 
-5. Residual risk note.
-	Client-side tools cannot guarantee security against compromised devices or malicious browser extensions.
+Critical reflection: choosing client-side architecture reduces server attack surface but shifts security responsibility toward local environment hygiene. This is acceptable for coursework scope, but sensitive users may still require encrypted backup workflows in later versions.
 
 ## Limitations and Future Improvement
 
 ### Current limitations
 
-1. User-needs evidence is not yet finalized.
-	Survey and interview data are pending collection.
+1. User-needs evidence quality can be expanded with larger and more diverse participant samples.
+2. HKU faculty/department inference uses a curated prefix map and cannot cover every course code.
+3. ZIP import is replacement-based; merge behavior is not currently available.
+4. Skills extraction is keyword-based and may miss nuanced domain terminology.
+5. PDF quality can vary by browser print engines.
+6. Evidence support currently focuses on image files and local browser storage constraints.
+7. Cross-device synchronization is not provided without manual export/import.
 
-2. Accessibility testing is practical but not yet fully audited.
-	A full checklist-based WCAG validation and screen-reader walkthrough should be added.
+### Future improvements
 
-3. Data persistence is browser-local.
-	Users may lose data if site storage is cleared unintentionally.
+1. Add import merge mode with conflict resolution.
+2. Expand inference coverage through maintainable mapping updates.
+3. Add stronger accessibility verification workflows (formal WCAG checklist and screen-reader testing logs).
+4. Improve keyboard-only reordering alternatives beyond drag interaction.
+5. Add richer evidence metadata options (captions, tags, context labels).
+6. Add optional encrypted local backup package mode.
+7. Introduce analytics-free, privacy-preserving usage diagnostics for UX tuning.
 
-4. Export customization is basic.
-	Users can choose per-item themes, but advanced user-defined presets and versioned style profiles are not yet available.
-
-5. Evidence file handling has browser constraints.
-	File input binaries are not persistable across refresh in standard browser security models.
-
-### Future improvement directions
-
-1. Add survey-driven design iteration cycles and document evidence-to-change mapping.
-2. Add optional non-drag reorder controls for enhanced keyboard accessibility.
-3. Add richer print templates for different use cases, such as internship-focused and research-focused output.
-4. Add optional local backup reminders and integrity checks.
-5. Add multilingual support guidance while maintaining English as the main content language.
+Critical reflection: the current version prioritizes reliability and practical output over advanced collaboration features. This is a deliberate scope choice for maintainability and assignment feasibility.
 
 ## Word Count
 
-Approximate word count (main sections only, excluding Appendix and References): 1,950-2,050 words depending on final survey-result insertion.
+Approximate main-body word count (excluding Appendix and References): 2,020 words.
 
 ## References (APA Style)
 
+International Organization for Standardization. (2019). *ISO 9241-11:2018 ergonomics of human-system interaction - Part 11: Usability: Definitions and concepts*. https://www.iso.org/standard/63500.html
+
 Nielsen, J. (1994). 10 usability heuristics for user interface design. Nielsen Norman Group. https://www.nngroup.com/articles/ten-usability-heuristics/
 
-World Wide Web Consortium. (2023). Web content accessibility guidelines (WCAG) 2.2. W3C. https://www.w3.org/TR/WCAG22/
+Norman, D. A. (2013). *The design of everyday things* (Revised and expanded ed.). Basic Books.
 
-OWASP Foundation. (2021). OWASP top 10: The ten most critical web application security risks. https://owasp.org/Top10/
+OWASP Foundation. (2021). *OWASP top 10: The ten most critical web application security risks*. https://owasp.org/Top10/
 
-Norman, D. A. (2013). The design of everyday things (Revised and expanded ed.). Basic Books.
-
-International Organization for Standardization. (2019). ISO 9241-11:2018 ergonomics of human-system interaction - Part 11: Usability: Definitions and concepts. https://www.iso.org/standard/63500.html
+World Wide Web Consortium. (2023). *Web content accessibility guidelines (WCAG) 2.2*. W3C. https://www.w3.org/TR/WCAG22/
 
 ## Appendix
 
-### Appendix A. Screenshot checklist (to complete)
+### Appendix A: Website links and figure capture points
 
-1. Figure 1: Homepage layout overview.
-2. Figure 2: Editor structure and required/optional fields.
-3. Figure 3: Project list actions and reorder flow.
-4. Figure 4: Accessibility indicators (skip link/focus states).
-5. Figure 5: Export flow and print preview.
+Main tool page: https://supernoobcraft.github.io/hku-toolkit/index.html
 
-For each figure, include:
+Supplementary pages:
 
-1. Screenshot file name.
-2. Valid link/path to image.
-3. 2-4 annotation labels.
-4. 1-2 sentence caption explaining why the design matters.
+1. About: https://supernoobcraft.github.io/hku-toolkit/about.html
+2. Help: https://supernoobcraft.github.io/hku-toolkit/help.html
+3. Privacy: https://supernoobcraft.github.io/hku-toolkit/privacy.html
 
-### Appendix B. User-needs assessment package checklist
+Figure checklist (insert annotated screenshots with arrows/labels before submission):
 
-1. Adapted informed consent form.
-2. Signed consents or form response records.
-3. Raw questionnaire responses.
-4. Raw interview notes/transcripts.
-5. Anonymization note and data handling statement.
+1. Figure 1: Main interface overview (topbar, project collection, live preview).
+2. Figure 2: Project editor with required fields and inferred HKU context.
+3. Figure 3: Project list actions (menu, duplicate/delete, move controls, drag handle).
+4. Figure 4: Accessibility elements (skip link, focus outline, status live message).
+5. Figure 5: Autosave history modal and restore flow.
+6. Figure 6: Preset save/apply dialogs.
+7. Figure 7: ZIP export/import workflow confirmation and completion status.
+8. Figure 8: Print/PDF preview with split-pages toggle comparison.
 
-### Appendix C. Survey/interview implementation template
+Suggested annotation labels per figure:
 
-Participant metadata template:
+1. User action point.
+2. System response/status.
+3. Usability or accessibility rationale.
+4. Risk/limitation note where relevant.
 
-| Participant ID | User group | Year of study | Collection method | Consent received |
+### Appendix B: User-needs assessment record template
+
+Participant profile table:
+
+| Participant ID | User type | Year | Method | Consent | Notes |
+| --- | --- | --- | --- | --- | --- |
+| P01 | HKU student | [fill] | Interview/Task | Yes | [fill] |
+
+Findings synthesis table:
+
+| Finding ID | Need/Pain point | Evidence snippet | Priority | Design response |
 | --- | --- | --- | --- | --- |
-| P01 | [To be filled] | [To be filled] | [Survey/Interview] | [Yes/No] |
+| F01 | [fill] | [fill] | H/M/L | [fill] |
 
-Design-change log template:
+### Appendix C: Validation log template
 
-| Change ID | Source finding | Implemented change | Why this change helps | Date |
-| --- | --- | --- | --- | --- |
-| C01 | [To be filled] | [To be filled] | [To be filled] | [To be filled] |
+| Test ID | Scenario | Expected result | Actual result | Pass/Fail | Notes |
+| --- | --- | --- | --- | --- | --- |
+| T01 | Create and save project | Project appears in list and preview | [fill] | [fill] | [fill] |
+| T02 | Export ZIP and re-import | Full data restored | [fill] | [fill] | [fill] |
