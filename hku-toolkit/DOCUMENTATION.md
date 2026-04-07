@@ -1,6 +1,6 @@
 # HKU Course Project Documentation Tool: Process Documentation
 
-Last Updated: 2026-03-29
+Last Updated: 2026-04-07
 
 Accessible website link: https://supernoobcraft.github.io/hku-toolkit/
 
@@ -40,41 +40,60 @@ Secondary users include teaching staff, mentors, or employers who may read expor
 
 User-needs assessment used a practical mixed approach suitable for a small educational project:
 
-1. Convenience-sample interviews with HKU peers.
-2. Task-based walkthroughs using realistic project-entry and export tasks.
-3. Iterative observation of pain points during feature testing.
+1. Structured survey (Google Form) with convenience-sample HKU students.
+2. Follow-up task walkthroughs for project entry, reorder, and export operations.
+3. Iterative observation of friction points during implementation tests.
 
-Why these methods:
+Survey profile summary (Form Responses 1.csv):
 
-1. Interviews were useful for understanding context, motivation, and language preferences.
-2. Task walkthroughs exposed concrete usability frictions better than abstract questions alone.
-3. Observation during repeated iterations helped verify whether design changes reduced actual user effort.
+1. Sample size: 6 valid responses (all consented).
+2. Study level: 6/6 were Year 2 students.
+3. Faculty spread: Arts (2), Engineering (2), Business (1), Education (1).
+4. Typical project volume: 4/6 reported 3-5 projects per semester; 2/6 reported 1-2 projects.
 
-This method prioritizes actionable design outcomes over statistical generalization, which is appropriate for the scope and timeline.
+Why this method was selected:
+
+1. The survey provided measurable signals for priority setting under limited timeline.
+2. Walkthroughs validated whether requested features actually improved task flow.
+3. Observation helped identify mismatch between stated preference and real interaction behavior.
+
+This method prioritizes actionable and traceable design outcomes over broad statistical generalization, which is appropriate for coursework scope.
 
 ### Needs assessment results and design implications
 
-Recurring needs identified during design/testing cycles were:
+Key quantified findings from the survey:
 
-1. Need for quick start with minimal mandatory inputs.
-2. Need to preserve data after refresh or accidental interruption.
-3. Need to reorder projects to match narrative priority for applications.
-4. Need to keep screenshots/evidence attached to project entries.
-5. Need to generate both archive-ready and submission-ready outputs.
-6. Need to avoid repetitive field filling across similar projects.
-7. Need confidence and transparency about local data handling.
+1. File fragmentation concern was consistently high (mean 4.17/5, 6/6 rated 4 or 5).
+2. Post-graduation access concern was high (mean 4.00/5, 5/6 rated 4 or 5).
+3. Reconstructing narrative took notable effort (mean 3.67/5, 3/6 rated 4 or 5).
+4. Recall difficulty during applications was moderate-high (mean 3.17/5, 4/6 rated 4 or 5).
+
+Feature-priority findings:
+
+1. Local persistence: High 4, Medium 2, Low 0.
+2. ZIP export: High 3, Medium 2, Low 1.
+3. Narrative reordering: High 3, Medium 3, Low 0.
+4. HKU contextual logic: High 3, Medium 3, Low 0.
+
+Barrier and preference findings:
+
+1. Biggest barrier was fear of refresh/data loss (5 mentions).
+2. Second barrier was too many mandatory fields (4 mentions).
+3. Screenshot/image attachment was also reported (2 mentions).
+4. Client-side ownership was preferred by most respondents (4/6 vs 2/6 for account-based).
+5. Final output format demand was uniform: PDF (6/6).
 
 Result-to-design mapping:
 
-1. Quick start need led to progressive disclosure, hidden editor by default, and a focused required-field set.
-2. Data resilience need led to debounced autosave, auto-recovery, and autosave history snapshots.
-3. Reordering need led to drag reorder, up/down quick buttons, and separate sort modes.
-4. Evidence need led to image upload support, local binary persistence, and caption fields.
-5. Output need led to ZIP bundle export/import and print-optimized PDF output.
-6. Repetition reduction need led to project preset save/apply with overwrite control.
-7. Trust and privacy need led to local-first architecture and explicit overwrite confirmations.
+1. Data-loss concern led to debounced autosave, recovery-on-load, and version history snapshots.
+2. Fragmented storage concern led to ZIP bundle export/import and local evidence persistence.
+3. Narrative effort findings led to drag reorder, quick move controls, and manual/sorted ordering modes.
+4. Low-friction demand led to progressive disclosure and a focused required-field set.
+5. Repetition pain led to preset save/apply with overwrite confirmation.
+6. PDF preference led to print-first styling and split-pages export option.
+7. Privacy preference led to local-first architecture and explicit overwrite confirmation flows.
 
-Critical reflection: while these outcomes significantly improve workflow efficiency, they also increase interface complexity (for example presets, history, sort logic). The design response was to keep advanced controls discoverable but non-blocking, so novice users can still complete a basic flow quickly.
+Critical reflection: survey size was small and year-level concentrated, so results are directional rather than population-representative. Even so, the signals were strong enough to justify reliability-first and export-first design priorities for this project scope.
 
 ## Website Creation Methods and Tools
 
