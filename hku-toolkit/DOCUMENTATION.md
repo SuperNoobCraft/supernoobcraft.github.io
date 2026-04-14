@@ -22,6 +22,14 @@ The website aims to fulfill five goals:
 
 This project is intentionally scoped as a client-side web application without a backend service or account requirement, which keeps deployment simple and data ownership user-controlled.
 
+### SEO and discoverability notes
+
+The toolkit now includes page metadata designed to improve search and sharing visibility for terms related to career preparation and project documentation. The active keywords include HKU, Career, Project, Documentation, PDF, Export, CV, Portfolio, Creator, Editor, Course, Graduate, Internship, Job, and Interview.
+
+The metadata is paired with clear page titles, descriptions, canonical links, and social preview tags so the main site and supporting pages are easier to discover and share while still keeping the content aligned with the project topic.
+
+The toolkit also includes `sitemap.xml` and `robots.txt` so search engines can discover the main tool page and supporting pages more reliably.
+
 ## Target Users and User Needs Assessment
 
 ### Target users and characteristics
