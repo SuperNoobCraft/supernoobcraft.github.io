@@ -2221,6 +2221,8 @@ function evidenceImagesHtml(previewUrls, evidenceData = []) {
         return "";
     }
 
+    const gridClass = previewUrls.length === 1 ? "evidence-image-grid single-image" : "evidence-image-grid";
+
     const imageItems = previewUrls
         .map((url, index) => {
             const evidence = evidenceData && evidenceData[index];
@@ -2240,7 +2242,7 @@ function evidenceImagesHtml(previewUrls, evidenceData = []) {
         })
         .join("");
 
-    return section("Evidence Images", "<div class=\"evidence-image-grid\">" + imageItems + "</div>", true);
+    return section("Evidence Images", "<div class=\"" + gridClass + "\">" + imageItems + "</div>", true);
 }
 
 function estimateContentLength(data) {
@@ -2261,6 +2263,28 @@ function estimateContentLength(data) {
         .trim().length;
 }
 
+function estimateFieldWeight(text) {
+    return hasText(text) ? text.replace(/\s+/g, " ").trim().length : 0;
+}
+
+function sectionBlock(title, fields, optional = true) {
+    const html = sectionFromFields(title, fields, optional);
+    if (!html) {
+        return null;
+    }
+
+    const fieldWeight = fields.reduce((sum, text) => sum + estimateFieldWeight(text), 0);
+    return {
+        html,
+        weight: estimateFieldWeight(title) * 2 + fieldWeight + (optional ? 10 : 0)
+    };
+}
+
+function evidenceSectionWeight(previewUrls = [], evidenceData = []) {
+    const captionWeight = evidenceData.reduce((sum, evidence) => sum + estimateFieldWeight(evidence && evidence.caption), 0);
+    return 240 + previewUrls.length * 120 + captionWeight;
+}
+
 function buildProjectSheetHtml(data, index, evidencePreviewUrls = [], evidenceData = []) {
     const termLabel = [data.identity.academicYear, data.identity.term].filter(Boolean).join(" ");
     const identityMeta = [
@@ -2274,7 +2298,7 @@ function buildProjectSheetHtml(data, index, evidencePreviewUrls = [], evidenceDa
         .join(" | ");
 
     const blocks = [
-        sectionFromFields(
+        sectionBlock(
             "HKU Context",
             [
                 formatField("Faculty", data.hkuContext.faculty),
@@ -2282,8 +2306,8 @@ function buildProjectSheetHtml(data, index, evidencePreviewUrls = [], evidenceDa
             ],
             false
         ),
-        sectionFromFields(
-            "Project Overview",
+        sectionBlock(
+            "Project Narrative",
             [
                 formatField("Problem statement", data.narrative.problemStatement),
                 formatField("Objectives", data.narrative.objectives),
@@ -2291,7 +2315,7 @@ function buildProjectSheetHtml(data, index, evidencePreviewUrls = [], evidenceDa
             ],
             true
         ),
-        sectionFromFields(
+        sectionBlock(
             "Personal Contribution",
             [
                 formatField("Role", data.team.role),
@@ -2300,7 +2324,7 @@ function buildProjectSheetHtml(data, index, evidencePreviewUrls = [], evidenceDa
             ],
             true
         ),
-        sectionFromFields(
+        sectionBlock(
             "Technical Implementation",
             [
                 formatField("Tools and stack", data.technical.tools),
@@ -2308,7 +2332,7 @@ function buildProjectSheetHtml(data, index, evidencePreviewUrls = [], evidenceDa
             ],
             true
         ),
-        sectionFromFields(
+        sectionBlock(
             "Challenges and Outcomes",
             [
                 formatField("Challenges faced", data.narrative.challenges),
@@ -2317,7 +2341,7 @@ function buildProjectSheetHtml(data, index, evidencePreviewUrls = [], evidenceDa
             ],
             true
         ),
-        sectionFromFields(
+        sectionBlock(
             "Reflection",
             [
                 formatField("Lessons learned", data.reflection.lessons),
@@ -2329,17 +2353,22 @@ function buildProjectSheetHtml(data, index, evidencePreviewUrls = [], evidenceDa
 
     const evidenceImagesSection = evidenceImagesHtml(evidencePreviewUrls, evidenceData);
     if (evidenceImagesSection) {
-        blocks.push(evidenceImagesSection);
+        blocks.push({ html: evidenceImagesSection, weight: evidenceSectionWeight(evidencePreviewUrls, evidenceData) });
     }
 
     const leftColumnBlocks = [];
     const rightColumnBlocks = [];
-    blocks.forEach((block, blockIndex) => {
-        if (blockIndex % 2 === 0) {
-            leftColumnBlocks.push(block);
-        } else {
-            rightColumnBlocks.push(block);
+    let leftColumnWeight = 0;
+    let rightColumnWeight = 0;
+    blocks.forEach((block) => {
+        if (leftColumnWeight <= rightColumnWeight) {
+            leftColumnBlocks.push(block.html);
+            leftColumnWeight += block.weight;
+            return;
         }
+
+        rightColumnBlocks.push(block.html);
+        rightColumnWeight += block.weight;
     });
 
     const likelyOnePage = estimateContentLength(data) <= 2600;
@@ -2441,7 +2470,7 @@ function toTxt(data, profileData) {
         "Faculty: " + data.hkuContext.faculty,
         "Department: " + data.hkuContext.department,
         "",
-        "[PROJECT OVERVIEW]",
+        "[PROJECT NARRATIVE]",
         "Problem Statement:",
         data.narrative.problemStatement,
         "",

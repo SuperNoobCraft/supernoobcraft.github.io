@@ -1355,6 +1355,11 @@ button.primary:hover {
     margin-top: 0.1rem;
 }
 
+.evidence-image-grid.single-image {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+}
+
 .evidence-image-grid img {
     display: block;
     width: 100%;
@@ -1371,6 +1376,14 @@ button.primary:hover {
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
+}
+
+.evidence-image-grid.single-image .evidence-figure {
+    width: min(100%, 520px);
+}
+
+.evidence-image-grid.single-image img {
+    max-height: 240px;
 }
 
 .evidence-caption {
@@ -1883,11 +1896,24 @@ button.primary:hover {
         gap: 0.2rem;
     }
 
+    .evidence-image-grid.single-image {
+        grid-template-columns: minmax(0, 1fr);
+        justify-items: center;
+    }
+
+    .evidence-image-grid.single-image .evidence-figure {
+        width: min(100%, 72mm);
+    }
+
     .evidence-image-grid img {
         border: 1px solid var(--item-line-soft, var(--line-soft));
         border-radius: 4px;
         max-height: 35mm;
         background: var(--item-surface-soft-2, var(--surface-soft-2));
+    }
+
+    .evidence-image-grid.single-image img {
+        max-height: 45mm;
     }
 
     .project-sheet.compact-print .summary-section.optional {
