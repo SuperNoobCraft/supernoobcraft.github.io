@@ -34,17 +34,4 @@ Interactive live map for the NoobSMP Minecraft server.
 
 ---
 
-## HKU Toolkit Survey Snapshot (Mar 2026)
-
-Early user-needs assessment (n=6 HKU students) indicated:
-- 6/6 agreed files are fragmented across platforms
-- 5/6 were concerned about losing access to coursework later
-- Most common barriers were refresh/data-loss anxiety (5/6) and too many mandatory fields (4/6)
-- 4/6 preferred client-side data ownership over account-required workflows
-- PDF was the most-needed final output format (6/6)
-
-These findings directly informed autosave/history, low-friction required fields, ZIP portability, and print-first export decisions in the HKU Toolkit.
-
----
-
-**Quick Navigation:** Use the hamburger menu (☰) on either page to switch between Owner's CV/Portfolio, HKU Toolkit, and NoobSMP Dynmap.
+**Quick Navigation:** Use the hamburger menu (☰) on either page to switch between Owner's CV/Portfolio, Course Project Tool, and NoobSMP Dynmap.

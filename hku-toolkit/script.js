@@ -2318,7 +2318,7 @@ function buildProjectSheetHtml(data, index, evidencePreviewUrls = [], evidenceDa
         sectionBlock(
             "Personal Contribution",
             [
-                formatField("Role", data.team.role),
+                formatField("Role in team", data.team.role),
                 formatField("Team size", data.team.teamSize),
                 formatField("Responsibilities", data.contribution.responsibilities)
             ],
@@ -2327,7 +2327,7 @@ function buildProjectSheetHtml(data, index, evidencePreviewUrls = [], evidenceDa
         sectionBlock(
             "Technical Implementation",
             [
-                formatField("Tools and stack", data.technical.tools),
+                formatField("Tools and tech stack", data.technical.tools),
                 formatField("Methods used", data.technical.methods)
             ],
             true
@@ -2336,7 +2336,7 @@ function buildProjectSheetHtml(data, index, evidencePreviewUrls = [], evidenceDa
             "Challenges and Outcomes",
             [
                 formatField("Challenges faced", data.narrative.challenges),
-                formatField("Mitigation", data.narrative.mitigation),
+                formatField("Mitigation strategy", data.narrative.mitigation),
                 formatField("Result summary", data.narrative.results)
             ],
             true
@@ -2471,7 +2471,7 @@ function toTxt(data, profileData) {
         "Department: " + data.hkuContext.department,
         "",
         "[PROJECT NARRATIVE]",
-        "Problem Statement:",
+        "Problem statement:",
         data.narrative.problemStatement,
         "",
         "Objectives:",
@@ -2481,24 +2481,24 @@ function toTxt(data, profileData) {
         data.narrative.deliverables,
         "",
         "[PERSONAL CONTRIBUTION]",
-        "Role: " + data.team.role,
-        "Team Size: " + data.team.teamSize,
+        "Role in team: " + data.team.role,
+        "Team size: " + data.team.teamSize,
         "Responsibilities:",
         data.contribution.responsibilities,
         "",
         "[TECHNICAL DETAILS]",
-        "Tools and Stack: " + data.technical.tools,
-        "Methods Used:",
+        "Tools and tech stack: " + data.technical.tools,
+        "Methods used:",
         data.technical.methods,
         "",
         "[CHALLENGES AND OUTCOMES]",
-        "Challenges:",
+        "Challenges faced:",
         data.narrative.challenges,
         "",
-        "Mitigation:",
+        "Mitigation strategy:",
         data.narrative.mitigation,
         "",
-        "Results:",
+        "Result summary:",
         data.narrative.results,
         "",
         "[REFLECTION - OPTIONAL]",
