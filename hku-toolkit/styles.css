@@ -1542,6 +1542,10 @@ button.primary:hover {
     justify-content: flex-end;
 }
 
+#historyModal .modal-actions {
+    gap: 0.65rem;
+}
+
 .confirm-modal-message {
     margin-top: 0.1rem;
     margin-bottom: 0.2rem;

@@ -119,6 +119,7 @@ const welcomeModal = document.getElementById("welcomeModal");
 const welcomeClose = document.getElementById("welcomeClose");
 const historyModal = document.getElementById("historyModal");
 const historyClose = document.getElementById("historyClose");
+const historyDeleteAll = document.getElementById("historyDeleteAll");
 const historyCloseIcon = document.getElementById("historyCloseIcon");
 const historyList = document.getElementById("historyList");
 const presetPickerModal = document.getElementById("presetPickerModal");
@@ -1619,6 +1620,33 @@ async function deleteHistorySnapshotById(snapshotId) {
     renderHistoryList();
     clearError();
     showStatus("Deleted autosave snapshot.");
+}
+
+async function deleteAllHistorySnapshots() {
+    if (!versionHistory.length) {
+        showStatus("No autosave history snapshots to delete.");
+        return;
+    }
+
+    const shouldDelete = await openConfirmModal({
+        title: "Delete All History",
+        message: "Delete all autosave history snapshots? This action is irreversible.",
+        confirmText: "Delete history",
+        destructive: true
+    });
+    if (!shouldDelete) {
+        return;
+    }
+
+    versionHistory = [];
+    persistVersionHistory();
+    renderHistoryList();
+    clearError();
+    showStatus("Deleted all autosave history snapshots.");
+
+    // Allow fresh snapshots to be captured again without waiting for old timing/signature state.
+    lastAutoHistoryAt = 0;
+    lastAutoHistorySignature = "";
 }
 
 function openHistoryModal() {
@@ -3262,6 +3290,14 @@ if (historyToggle) {
 
 if (historyClose) {
     historyClose.addEventListener("click", closeHistoryModal);
+}
+
+if (historyDeleteAll) {
+    historyDeleteAll.addEventListener("click", () => {
+        deleteAllHistorySnapshots().catch(() => {
+            showError("Could not delete autosave history right now.");
+        });
+    });
 }
 
 if (historyCloseIcon) {
