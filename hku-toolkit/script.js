@@ -3095,6 +3095,17 @@ function undoDeleteProject() {
 }
 
 function selectProjectById(projectId) {
+    const focusProjectItem = () => {
+        const targetItem = projectList.querySelector('.project-item[data-id="' + projectId + '"]');
+        if (targetItem && typeof targetItem.focus === "function") {
+            try {
+                targetItem.focus({ preventScroll: true });
+            } catch (error) {
+                targetItem.focus();
+            }
+        }
+    };
+
     const activateSelectedProject = () => {
         const project = projects.find((item) => item.id === projectId);
         if (!project) {
@@ -3114,6 +3125,7 @@ function selectProjectById(projectId) {
             })
             .catch(() => {});
         renderProjectList();
+        focusProjectItem();
         renderPreview();
         schedulePersistSessionState();
     };
@@ -3613,6 +3625,25 @@ projectList.addEventListener("keydown", (event) => {
 
     const item = event.target.closest(".project-item");
     if (!item) {
+        return;
+    }
+
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        const items = Array.from(projectList.querySelectorAll(".project-item"));
+        const currentIndex = items.indexOf(item);
+        if (currentIndex < 0) {
+            return;
+        }
+
+        const nextIndex = event.key === "ArrowDown" ? currentIndex + 1 : currentIndex - 1;
+        if (nextIndex >= 0 && nextIndex < items.length) {
+            event.preventDefault();
+            const nextItem = items[nextIndex];
+            if (nextItem && typeof nextItem.focus === "function") {
+                nextItem.focus();
+            }
+        }
+        // At boundaries, do not prevent default so normal page scrolling still works.
         return;
     }
 
