@@ -318,6 +318,9 @@ function termRank(termValue) {
     if (normalized === "summer") {
         return 3;
     }
+    if (normalized === "full year") {
+        return 0;
+    }
     return 99;
 }
 
