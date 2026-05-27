@@ -287,8 +287,10 @@
         }
 
         const dateDelta = parseFirstDateValue(a.time) - parseFirstDateValue(b.time);
+        const direction = sortValue === 'time-desc' ? -1 : 1;
+
         if (dateDelta !== 0) {
-            return dateDelta;
+            return dateDelta * direction;
         }
 
         return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
