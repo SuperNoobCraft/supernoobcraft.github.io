@@ -4,7 +4,7 @@
         <meta charset="UTF-8" />
         <title>Jim Tze Lau - CV</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <script src="hku-project-tool/theme.js"></script>
+        <script src="hku-toolkit/theme.js"></script>
         <link
             rel="stylesheet"
             href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap"
@@ -45,7 +45,9 @@
                 </div>
             </div>
             <nav class="top-links" aria-label="Secondary pages">
-                <a href="CourseProjects.pdf" target="_blank" rel="noopener noreferrer" title="View projects PDF">Projects</a>
+                <a href="index.html" aria-current="page">CV</a>
+                <a href="games.html">Games</a>
+                <a href="projects.html">Projects</a>
                 <button type="button" class="header-btn header-icon-btn" id="printBtn" aria-label="Print CV" title="Print CV">
                     <i class="fa-solid fa-print" aria-hidden="true"></i>
                 </button>
@@ -107,150 +109,14 @@
                             I lead, I ship, and I don't stop at "does it work."
                         </p>
                     </section>
+                    <section id="work-experience">
+                        <h2>Work Experience</h2>
+                        <div id="work-list">Loading…</div>
+                    </section>
+
                     <section id="projects">
-                        <h2>Projects & Experience</h2>
-
-                        <div class="project">
-                            <img src="images/atl-thumb.png" alt="ATL" class="project-thumb" />
-                            <div>
-                                <div class="project-title">
-                                    <a href="https://www.atlab.hku.hk/" target="_blank" rel="noopener noreferrer">
-                                        Arts Tech Lab – Student Helper
-                                    </a>
-                                </div>
-                                <p class="project-meta">Jan 2026–Current · The University of Hong Kong</p>
-                                <ul>
-                                    <li>
-                                        Improved daily operations by modernizing inventory system with QR Code labelling and provided technical support for XR facilities, 
-                                        assisting students with hardware troubleshooting.
-                                    </li>
-                                    <li>
-                                        Developing an AI-powered lab assistant agent using <strong>n8n</strong> and <strong>MongoDB</strong> 
-                                        to automate responses to student inquiries and equipment requests, reducing manual workload for lab staff..
-                                    </li>
-                                    <li>
-                                        Improved and supported the <a href="https://youtu.be/rAlOOcbqqfM" target="_blank" rel="noopener noreferrer">"House of Serenos" VR demo (Unity)</a> for public exhibition at <strong>Alibaba JUMPSTARTER 2026</strong>, 
-                                        fixing interaction and height issues, implementing quick-teleport macros, and providing on-site technical support.
-                                    </li>
-                                </ul>
-                                <p class="project-tech">n8n · MongoDB · Unity · VR · Technical Support</p>
-                            </div>
-                        </div>
-                        <div class="project">
-                            <img src="images/mask-thumb.png" alt="Midnight Gambit" class="project-thumb" />
-                            <div>
-                                <div class="project-title">
-                                    <a href="https://globalgamejam.org/games/2026/not-chess-9" target="_blank" rel="noopener noreferrer">
-                                        Midnight Gambit – Lead Game Designer, Programmer
-                                    </a>
-                                </div>
-                                <p class="project-meta">Jan 2026 · Global Game Jam HK 2026 (Team of 8)</p>
-                                <ul>
-                                    <li>
-                                        Designed the complete gameplay loop of a strategy-versus game blending chess mechanics, hidden identity, and resource management.
-                                    </li>
-                                    <li>
-                                        Designed and balanced complete unit roster of 6 types with distinct mechanics, costs, and roles within a chess-hybrid strategy system.
-                                    </li>
-                                    <li>
-                                        Implemented the Main Menu, simple Tutorial, and Audio systems in Unity, integrating with backend server logic.
-                                    </li>
-                                </ul>
-                                <p class="project-tech">Unity · C# · Game Design · Balancing · UI</p>
-                            </div>
-                        </div>
-
-                        <div class="project">
-                            <img src="images/nyxia-thumb.png" alt="Nyxia" class="project-thumb" />
-                            <div>
-                                <div class="project-title">
-                                    <a
-                                        href="https://www.atlab.hku.hk/lab-use-and-policies/atl-student-cohort-group/gamemakers-group/"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                    >
-                                        Nyxia – Lead Programmer, Game Mechanics Designer
-                                    </a>
-                                </div>
-                                <p class="project-meta">Mar 2025–Current · HKU ATL GameMakers Group (HAGG)</p>
-                                <ul>
-                                    <li>Design and implement core gameplay systems for a metroidvania project.</li>
-                                    <li>
-                                        Collaborate with designers and artists to iterate quickly on mechanics and
-                                        balancing.
-                                    </li>
-                                </ul>
-                                <p class="project-tech">C# · Unity · Game Development · HKU ATL</p>
-                            </div>
-                        </div>
-
-                        <div class="project">
-                            <img src="images/noobsmp-thumb.png" alt="NoobSMP" class="project-thumb" />
-                            <div>
-                                <div class="project-title">
-                                    <a href="https://youtu.be/nP5n-KmLmbE?si=n53-kVkrfEBRXwpK" target="_blank" rel="noopener noreferrer">
-                                        NoobSMP – Founder & Server Administrator
-                                    </a>
-                                </div>
-                                <p class="project-meta">2020–Current · Personal Project</p>
-                                <ul>
-                                    <li>
-                                        Host and maintain a private Minecraft SMP server across 5+ seasons,
-                                        handling networking, server configuration, and long-term uptime management.
-                                    </li>
-                                    <li>
-                                        Manage community infrastructure including Discord server administration and
-                                        website map integration.
-                                    </li>
-                                    <li>
-                                        Produced a Season 4 recap montage, handling full video editing and narrative framing for the community.
-                                    </li>
-                                </ul>
-                                <p class="project-tech">Networking · Administration · Discord · Video Editing</p>
-                            </div>
-                        </div>
-
-                        <div class="project">
-                            <img src="images/vr-thumb.png" alt="Victoria Prison" class="project-thumb" />
-                            <div>
-                                <div class="project-title">
-                                    <a href="https://www.youtube.com/watch?v=spF1-0IPyLM" target="_blank" rel="noopener noreferrer">
-                                        Behind Bars: Victoria Prison – Programmer
-                                    </a>
-                                </div>
-                                <p class="project-meta">Feb–May 2025 · The University of Hong Kong</p>
-                                <ul>
-                                    <li>
-                                        Recreated Tai Kwun’s B Hall in Unreal Engine for digital humanities teaching.
-                                    </li>
-                                    <li>
-                                        Worked with Twinmotion and SketchUp assets to produce an immersive
-                                        environment.
-                                    </li>
-                                </ul>
-                                <p class="project-tech">Unreal Engine · Twinmotion · SketchUp</p>
-                            </div>
-                        </div>
-                        
-                        <div class="project">
-                            <img src="images/vvm-thumb.png" alt="Warlike Mech" class="project-thumb" />
-                            <div>
-                                <div class="project-title">
-                                    <a href="https://grain-studios.itch.io/warlike-mech" target="_blank" rel="noopener noreferrer">
-                                        Warlike Mech – Project Manager, Lead Game Designer
-                                    </a>
-                                </div>
-                                <p class="project-meta">Aug–Dec 2022 · Pui Ching Middle School · JFK scheme</p>
-                                <ul>
-                                    <li>
-                                        Developed a 2D action‑platformer in a small team, responsible for project
-                                        management, map design, mechanics design, and more.
-                                    </li>
-                                    <li>Delivered a playable demo on itch.io to showcase gameplay and narrative.</li>
-                                </ul>
-                                <p class="project-tech">GameMaker Studio · Game Design · Project Management</p>
-                            </div>
-                        </div>
+                        <h2>Selected Projects</h2>
+                        <div id="featured-projects">Loading…</div>
                     </section>
                 </div>
                 <!-- RIGHT COLUMN -->
@@ -264,10 +130,10 @@
                         <p>
                             <em
                                 >Relevant Coursework: <br />COMP1117 Computer Programming <br />COMP2113 Programming Technologies 
-                                <br />COMP2119 Data Structures & Algorithms (ongoing) <br />COMP2120 Computer Organization 
-                                <br />COMP2121 Discrete Mathematics <br />COMP3329 Game Design & Programming (ongoing) 
+                                <br />COMP2119 Data Structures & Algorithms <br />COMP2120 Computer Organization 
+                                <br />COMP2121 Discrete Mathematics <br />COMP3329 Game Design & Programming
                                 <br />HUDT2100 Emerging Trends in Digital Practices <br />HUDT2205 XR in the Humanities 
-                                <br />BSIM3021 Website UX Design (ongoing) <br />STAT1016 Data Science 101
+                                <br />BSIM3021 Website UX Design <br />STAT1016 Data Science 101
                             </em>
                         </p>
                     </section>
@@ -349,5 +215,6 @@
         </div>
         <footer class="footer-note no-print" aria-label="Site footer">© 2026 Jim Tze Lau — CV</footer>
         <script src="script.js"></script>
+        <script src="data-renderer.js"></script>
     </body>
 </html>

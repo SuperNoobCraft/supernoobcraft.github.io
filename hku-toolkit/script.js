@@ -97,6 +97,7 @@ const importZipInput = document.getElementById("importZipInput");
 const undoDeleteBtn = document.getElementById("undoDelete");
 const importBundleZipBtn = document.getElementById("importBundleZip");
 const exportBundleZipBtn = document.getElementById("exportBundleZip");
+const clearAllBtn = document.getElementById("clearAllBtn");
 const teamFields = document.getElementById("teamFields");
 const splitPagesToggle = document.getElementById("splitPagesToggle");
 const includeSkillsToggle = document.getElementById("includeSkillsToggle");
@@ -3851,6 +3852,78 @@ if (exportBundleZipBtn) {
             showStatus("Exported ZIP bundle with projects and evidence images.");
         } catch (error) {
             showError("ZIP export failed. " + (error && error.message ? error.message : ""));
+        }
+    });
+}
+
+if (clearAllBtn) {
+    clearAllBtn.addEventListener("click", async () => {
+        const shouldClear = await openConfirmModal({
+            title: "Clear all projects",
+            message:
+                "This will permanently delete all saved projects and uploaded evidence. It's strongly recommended you export a ZIP backup first. Continue?",
+            confirmText: "Clear all",
+            destructive: true
+        });
+
+        if (!shouldClear) {
+            return;
+        }
+
+        clearError();
+        showStatus("Clearing all saved projects and evidence...");
+
+        try {
+            // Close and remove evidence DB if available
+            if (supportsIndexedDb()) {
+                try {
+                    const db = await openEvidenceDb();
+                    if (db && typeof db.close === "function") {
+                        try {
+                            db.close();
+                        } catch (e) {}
+                    }
+                    evidenceDbPromise = null;
+                    try {
+                        const req = indexedDB.deleteDatabase(EVIDENCE_DB_NAME);
+                        req.onsuccess = () => {};
+                        req.onerror = () => {};
+                    } catch (e) {}
+                } catch (e) {
+                    // ignore
+                }
+            }
+
+            // Delete per-project evidence entries as a fallback
+            await deleteEvidenceForProjectIds(projects.map((p) => p.id).concat([DRAFT_EVIDENCE_KEY])).catch(() => {});
+
+            // Clear runtime state
+            projects = [];
+            activeProjectId = "";
+            lastDeletedProjectSnapshot = null;
+            versionHistory = [];
+            projectPresets = [];
+            clearAllEvidencePreviewUrls();
+            clearFormFields();
+            setProfileFields({ name: "", email: "", phone: "", link: "", displayMode: "per-project", theme: "academic" });
+
+            // Remove persisted items
+            safeRemoveLocalStorageItem(SESSION_STORAGE_KEY);
+            safeRemoveLocalStorageItem(PROJECT_PRESETS_STORAGE_KEY);
+            safeRemoveLocalStorageItem(VERSION_HISTORY_STORAGE_KEY);
+            safeRemoveLocalStorageItem(WELCOME_STORAGE_KEY);
+
+            persistProjectPresets();
+            persistVersionHistory();
+
+            renderProjectList();
+            renderPreview();
+            renderHistoryList();
+            renderUndoDeleteState();
+
+            showStatus("All saved projects and evidence cleared.");
+        } catch (error) {
+            showError("Could not clear all data right now.");
         }
     });
 }

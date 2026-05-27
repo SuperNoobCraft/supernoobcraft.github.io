@@ -177,7 +177,13 @@
 
     if (printButton) {
         printButton.addEventListener("click", function () {
-            window.open("JimTzeLau_CV.pdf", "_blank", "noopener");
+            const currentPath = window.location.pathname.toLowerCase();
+            const isPortfolioPage = currentPath.endsWith("/games.html") || currentPath.endsWith("/projects.html");
+            if (!isPortfolioPage) {
+                window.open("JimTzeLau_CV.pdf", "_blank", "noopener");
+                return;
+            }
+            window.print();
         });
     }
 

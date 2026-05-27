@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Projects — Jim Tze Lau</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <script src="hku-toolkit/theme.js"></script>
+        <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+            integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+        />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+        <header class="topbar no-print" role="banner">
+            <div class="brand-group">
+                <details class="site-switcher">
+                    <summary aria-label="Open site switcher" title="Open site switcher">
+                        <span class="burger-icon" aria-hidden="true">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </span>
+                    </summary>
+                    <nav class="site-switcher-menu" aria-label="Site switcher menu">
+                        <a href="index.html">Owner's CV</a>
+                        <a href="hku-toolkit/index.html">HKU Toolkit</a>
+                        <a href="http://noobsmp.ddns.net:8123/" target="_blank" rel="noopener noreferrer">NoobSMP Map</a>
+                    </nav>
+                </details>
+                <div>
+                    <p class="eyebrow">Projects Portfolio</p>
+                    <h1 class="brand-title">Jim Tze Lau</h1>
+                </div>
+            </div>
+            <nav class="top-links" aria-label="Secondary pages">
+                <a href="index.html">CV</a>
+                <a href="games.html">Games</a>
+                <a href="projects.html" aria-current="page">Projects</a>
+                <button type="button" class="header-btn header-icon-btn" id="printBtn" aria-label="Print Projects page" title="Print Projects page">
+                    <i class="fa-solid fa-print" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="header-btn header-icon-btn" id="themeToggle" aria-label="Switch to dark mode" title="Switch to dark mode">
+                    <i class="fa-solid fa-moon" aria-hidden="true"></i>
+                </button>
+            </nav>
+        </header>
+
+        <div class="page">
+            <section>
+                <h2>All Projects</h2>
+                <div id="projects-list">Loading…</div>
+            </section>
+        </div>
+
+        <footer class="footer-note no-print">© 2026 Jim Tze Lau — Projects</footer>
+        <script src="script.js"></script>
+        <script src="data-renderer.js"></script>
+  </body>
+</html>

@@ -412,6 +412,49 @@ em {
     font-family: "JetBrains Mono", "Inter", monospace;
     color: var(--text-secondary);
 }
+.portfolio-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: end;
+    margin-bottom: 10px;
+}
+
+.portfolio-sort-controls {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 180px;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+}
+
+.portfolio-sort {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font: inherit;
+    padding: 8px 10px;
+}
+
+.portfolio-search-controls {
+    flex: 1 1 260px;
+}
+
+.portfolio-search {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font: inherit;
+}
+
+.portfolio-search::placeholder {
+    color: var(--text-secondary);
+}
 .right-col ul {
     padding-left: 16px;
 }
@@ -465,6 +508,35 @@ em {
 
     .project-tech {
         font-family: "Courier New", Courier, monospace !important;
+    }
+
+    .portfolio-controls {
+        margin-bottom: 8px !important;
+    }
+
+    .portfolio-sort-controls {
+        display: none !important;
+    }
+
+    .portfolio-search-controls {
+        margin-bottom: 8px !important;
+    }
+
+    .portfolio-search {
+        background: #ffffff !important;
+        color: #111111 !important;
+        border-color: #cfcfcf !important;
+        box-shadow: none !important;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+
+    .portfolio-search::placeholder {
+        color: #666666 !important;
+    }
+
+    .portfolio-search:placeholder-shown {
+        display: none !important;
     }
 
     html,
