@@ -2,24 +2,39 @@
 (function () {
     const portfolioData = {
         cv: {
-            featured: ['hku-toolkit', 'midnight-gambit', 'victoria-prison', 'noobsmp'],
-            work: ['atl']
+            featured: ['hku-toolkit', 'midnight-gambit', 'victoria-prison'],
+            work: ['xrc-intern', 'atl']
         },
         work: [
             {
+                id: 'xrc-intern',
+                title: 'Human-System Interaction Simulation Lab',
+                role: 'XR Content Development/Game Development Intern',
+                time: 'Jun–Aug 2026',
+                context: 'Department of Data and Systems Engineering, HKU',
+                description: [
+                    'Develop and optimize immersive XR content and interactive experiences using cutting-edge tools and technologies.',
+                    'Contribute to game development workflows, including design, prototyping, and implementation of interactive elements.',
+                    'Document processes and findings to support project scalability and knowledge sharing.'
+                ],
+                link: 'https://www.dase.hku.hk/facilities/human-system-interaction-and-simulation-laboratory-his',
+                thumbnail: 'images/xrc-thumb.png',
+                tags: ['unity', 'vr', 'xr', 'game-design', 'game-development']
+            },
+            {
                 id: 'atl',
                 title: 'Arts Tech Lab',
-                role: 'Student Helper',
-                time: 'Jan 2026–Current',
-                context: 'The University of Hong Kong',
+                role: 'Software Engineer Intern',
+                time: 'Jan–May 2026',
+                context: 'Faculty of Arts, HKU',
                 description: [
                     'Improved daily operations by modernizing inventory system with QR Code labelling and provided technical support for XR facilities.',
                     'Developing an AI-powered lab assistant agent using n8n and MongoDB to automate responses to student inquiries and equipment requests.',
-                    'Improved and supported the "House of Serenos" VR demo for public exhibition, fixing interaction and height issues, and providing on-site support.'
+                    'Improved the "House of Serenos" VR demo for public exhibition, fixing interaction issues, and providing on-site support.'
                 ],
                 link: 'https://www.atlab.hku.hk/',
                 thumbnail: 'images/atl-thumb.png',
-                tags: ['n8n', 'MongoDB', 'Unity', 'VR', 'technical-support']
+                tags: ['n8n', 'mongodb', 'unity', 'vr', 'technical-support']
             }
         ],
         projects: [
@@ -28,7 +43,7 @@
                 title: 'HKU Course Project Documentation Tool',
                 role: 'Creator',
                 time: 'Mar–Apr 2026',
-                context: 'The University of Hong Kong · BSIM3021',
+                context: 'HKU · BSIM3021',
                 description: [
                     'Built a browser-based web tool to help HKU students document, organize, preview, and reuse course projects in a consistent structure.',
                     'Supports ZIP and [PDF exports](CourseProjects.pdf) suitable for applications, submissions, and personal archiving.',
@@ -43,7 +58,7 @@
                 title: 'Game-Tech Timeline',
                 role: 'Creator',
                 time: 'Mar–Apr 2025',
-                context: 'The University of Hong Kong · HUDT2100',
+                context: 'HKU · HUDT2100',
                 description: [
                     'Created a website that showcases a brief timeline of the evolution of video games alongside the improvements of modern computing and graphics technology.',
                     'Focused on learning the methods and presenting the development of Digital Humanities ideas in a concise web format.',
@@ -73,7 +88,7 @@
                 title: 'Behind Bars: Victoria Prison',
                 role: 'Programmer',
                 time: 'Feb–May 2025',
-                context: 'The University of Hong Kong',
+                context: 'HKU',
                 description: [
                     'Recreated Tai Kwun’s B Hall in Unreal Engine for digital humanities teaching.',
                     'Worked with Twinmotion and SketchUp assets to produce an immersive environment.'
@@ -132,7 +147,7 @@
                 title: 'Wordle Clone',
                 role: 'Programmer',
                 time: 'Sep–Nov 2025',
-                context: 'The University of Hong Kong  · COMP2113',
+                context: 'HKU · COMP2113',
                 description: [
                     'Built a Wordle-inspired clone with multiple modes and a leaderboard.',
                     'Implemented game logic and persistence in C++.'
@@ -146,7 +161,7 @@
                 title: 'Happy Derby',
                 role: 'Game Designer, Programmer',
                 time: 'Feb–May 2026',
-                context: 'The University of Hong Kong · COMP3329',
+                context: 'HKU · COMP3329',
                 description: [
                     'Created a multiplayer racing game with unique mechanics and a vibrant art style.',
                     'Implemented core gameplay systems and spectators betting function through Google Forms integration.'
@@ -247,6 +262,62 @@
         return el;
     }
 
+    function renderWorkExperience(item) {
+        const el = document.createElement('div');
+        el.className = 'project';
+
+        const img = document.createElement('img');
+        img.className = 'project-thumb';
+        img.src = item.thumbnail || 'images/icon.ico';
+        img.alt = item.title || '';
+
+        const content = document.createElement('div');
+
+        const title = document.createElement('div');
+        title.className = 'project-title';
+        const a = document.createElement('a');
+        a.href = item.link || '#';
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.textContent = item.role || item.title || '';
+        title.appendChild(a);
+
+        const company = document.createElement('p');
+        company.className = 'project-meta';
+        company.textContent = item.title || '';
+
+        const meta = document.createElement('p');
+        meta.className = 'project-meta';
+        meta.textContent = [item.time, item.context].filter(Boolean).join(' · ');
+
+        const ul = document.createElement('ul');
+        if (Array.isArray(item.description)) {
+            item.description.forEach(d => {
+                const li = document.createElement('li');
+                appendDescriptionWithLinks(li, d);
+                ul.appendChild(li);
+            });
+        } else if (item.description) {
+            const li = document.createElement('li');
+            appendDescriptionWithLinks(li, item.description);
+            ul.appendChild(li);
+        }
+
+        const tech = document.createElement('p');
+        tech.className = 'project-tech';
+        tech.textContent = (item.tags || []).join(' · ');
+
+        content.appendChild(title);
+        content.appendChild(company);
+        if (meta.textContent) content.appendChild(meta);
+        if (ul.children.length) content.appendChild(ul);
+        if (tech.textContent) content.appendChild(tech);
+
+        el.appendChild(img);
+        el.appendChild(content);
+        return el;
+    }
+
     function parseFirstDateValue(timeText) {
         if (!timeText || typeof timeText !== 'string') {
             return Number.POSITIVE_INFINITY;
@@ -302,7 +373,7 @@
         workList.innerHTML = '';
         (cv && cv.work ? cv.work : []).forEach(id => {
             const item = map[id];
-            if (item) workList.appendChild(renderProject(item));
+            if (item) workList.appendChild(renderWorkExperience(item));
         });
     }
 
