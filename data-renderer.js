@@ -28,7 +28,7 @@
                 time: 'Jan–May 2026',
                 context: 'Faculty of Arts, HKU',
                 description: [
-                    'Improved daily operations by modernizing inventory system with QR Code labelling and provided technical support for XR facilities.',
+                    'Designed and deployed a QR-based inventory management system and provided technical support for XR facilities.',
                     'Developing an AI-powered lab assistant agent using n8n and MongoDB to automate responses to student inquiries and equipment requests.',
                     'Improved the "House of Serenos" VR demo for public exhibition, fixing interaction issues, and providing on-site support.'
                 ],
