@@ -178,9 +178,10 @@
                 context: 'Solo Project',
                 description: [
                     'Creating a platformer game with only 1 button input, where the player must navigate through levels by controlling a bouncing ball.',
-                    'Incorporated Foddian game mechanics to intentionally frustrate the player and create a unique challenge.'
+                    'Incorporated Foddian game mechanics to intentionally frustrate the player and create a unique challenge.',
+                    'Playable demo available on supernoobcraft.github.io/pinball-foddian'
                 ],
-                link: 'games/pinball-foddian/index.html',
+                link: 'games/pinball-foddian',
                 thumbnail: 'images/pinball-thumb.png',
                 tags: ['unity', 'c#', 'game-design', 'platformer']
             }
