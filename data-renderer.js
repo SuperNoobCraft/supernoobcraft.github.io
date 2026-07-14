@@ -169,6 +169,20 @@
                 link: 'https://canva.link/encs707ori7swqq',
                 thumbnail: 'images/derby-thumb.png',
                 tags: ['unity', 'c#', 'game-design', 'party']
+            },
+            {
+                id: 'pinball-foddian',
+                title: 'Pinball Foddian (Work-in-Progress)',
+                role: 'Creator',
+                time: 'Mar 2026–Current',
+                context: 'Solo Project',
+                description: [
+                    'Creating a platformer game with only 1 button input, where the player must navigate through levels by controlling a bouncing ball.',
+                    'Incorporated Foddian game mechanics to intentionally frustrate the player and create a unique challenge.'
+                ],
+                link: 'games/pinball-foddian/index.html',
+                thumbnail: 'images/pinball-thumb.png',
+                tags: ['unity', 'c#', 'game-design', 'platformer']
             }
         ]
     };
