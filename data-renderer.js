@@ -172,16 +172,16 @@
             },
             {
                 id: 'pinball-foddian',
-                title: 'Pinball Foddian (Work-in-Progress)',
+                title: 'Pinball Foddian (Work-in-Progress, click here to play demo)',
                 role: 'Creator',
                 time: 'Mar 2026–Current',
                 context: 'Solo Project',
                 description: [
                     'Creating a platformer game with only 1 button input, where the player must navigate through levels by controlling a bouncing ball.',
                     'Incorporated Foddian game mechanics to intentionally frustrate the player and create a unique challenge.',
-                    'Playable demo available on supernoobcraft.github.io/pinball-foddian'
+                    'Playable demo available by clicking the link above.'
                 ],
-                link: 'games/pinball-foddian',
+                link: 'games/pinball-foddian/index.html',
                 thumbnail: 'images/pinball-thumb.png',
                 tags: ['unity', 'c#', 'game-design', 'platformer']
             }
