@@ -1,9 +1,9 @@
 const cacheName = "SuperNoobCraft-PinballFlappy-1.0";
 const contentToCache = [
-    "Build/20260714 Web.loader.js",
-    "Build/20260714 Web.framework.js",
-    "Build/20260714 Web.data",
-    "Build/20260714 Web.wasm",
+    "Build/pinball-foddian.loader.js",
+    "Build/pinball-foddian.framework.js",
+    "Build/pinball-foddian.data",
+    "Build/pinball-foddian.wasm",
     "TemplateData/style.css"
 
 ];
