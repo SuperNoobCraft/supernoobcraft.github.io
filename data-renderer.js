@@ -3,22 +3,22 @@
     const portfolioData = {
         cv: {
             featured: ['hku-toolkit', 'midnight-gambit', 'victoria-prison'],
-            work: ['xrc-intern', 'atl']
+            work: ['his-intern', 'atl']
         },
         work: [
             {
-                id: 'xrc-intern',
-                title: 'Human-System Interaction Simulation Lab',
-                role: 'XR Content Development/Game Development Intern',
+                id: 'his-intern',
+                title: 'HKU Visioneers (Human-System Interaction Simulation Lab)',
+                role: 'Game Development Intern',
                 time: 'Jun–Aug 2026',
                 context: 'Department of Data and Systems Engineering, HKU',
                 description: [
-                    'Develop and optimize immersive XR content and interactive experiences using cutting-edge tools and technologies.',
-                    'Contribute to game development workflows, including design, prototyping, and implementation of interactive elements.',
-                    'Document processes and findings to support project scalability and knowledge sharing.'
+                    'Develop interactive XR experiences and game demos using Unity, including the design and development of [Siege Command Simulator](item:siege-command-simulator), a strategy game for a CAVE environment.',
+                    'Support laboratory operations through facility supervision, technical troubleshooting, and user assistance for XR facilities and equipment.', 
+                    'Assist with workshops, demonstrations, and outreach activities, including Knowledge Exchange programmes for SEN students and laboratory showcase events.'
                 ],
-                link: 'https://www.dase.hku.hk/facilities/human-system-interaction-and-simulation-laboratory-his',
-                thumbnail: 'images/xrc-thumb.png',
+                link: 'https://visioneers.hku.hk/',
+                thumbnail: 'images/visioneers.png',
                 tags: ['unity', 'vr', 'xr', 'game-design', 'game-development']
             },
             {
@@ -30,7 +30,7 @@
                 description: [
                     'Designed and deployed a QR-based inventory management system and provided technical support for XR facilities.',
                     'Developing an AI-powered lab assistant agent using n8n and MongoDB to automate responses to student inquiries and equipment requests.',
-                    'Improved the "House of Serenos" VR demo for public exhibition, fixing interaction issues, and providing on-site support.'
+                    'Improved the [House of Serenos](item:house-of-serenos) VR demo for public exhibition, fixing interaction issues, and providing on-site support.'
                 ],
                 link: 'https://www.atlab.hku.hk/',
                 thumbnail: 'images/atl-thumb.png',
@@ -45,7 +45,7 @@
                 time: 'Mar–Apr 2026',
                 context: 'HKU · BSIM3021',
                 description: [
-                    'Built a browser-based web tool to help HKU students document, organize, preview, and reuse course projects in a consistent structure.',
+                    'Conceived, designed, and developed a browser-based web tool that helps HKU students document, organize, and reuse course projects.',
                     'Supports ZIP and [PDF exports](CourseProjects.pdf) suitable for applications, submissions, and personal archiving.',
                     'Designed with accessible navigation, local data ownership, and minimal workflow friction for real academic use.'
                 ],
@@ -56,7 +56,7 @@
             {
                 id: 'game-tech-timeline',
                 title: 'Game-Tech Timeline',
-                role: 'Creator',
+                role: 'Designer & Developer',
                 time: 'Mar–Apr 2025',
                 context: 'HKU · HUDT2100',
                 description: [
@@ -75,7 +75,7 @@
                 time: '2020–Current',
                 context: 'Personal Project',
                 description: [
-                    'Host and maintain a private Minecraft SMP server across 5+ seasons, handling networking and long-term uptime management.',
+                    'Host and maintain a private Minecraft SMP server since 2020 across 5+ seasons, handling networking and long-term uptime management.',
                     'Manage community infrastructure including Discord server administration and website map integration.',
                     'Produced a Season 4 recap montage, handling full video editing and narrative framing for the community.'
                 ],
@@ -88,7 +88,7 @@
                 title: 'Behind Bars: Victoria Prison',
                 role: 'Programmer',
                 time: 'Feb–May 2025',
-                context: 'HKU',
+                context: 'HKU · HUDT2205',
                 description: [
                     'Recreated Tai Kwun’s B Hall in Unreal Engine for digital humanities teaching.',
                     'Worked with Twinmotion and SketchUp assets to produce an immersive environment.'
@@ -96,6 +96,21 @@
                 link: 'https://www.youtube.com/watch?v=spF1-0IPyLM',
                 thumbnail: 'images/vr-thumb.png',
                 tags: ['unreal-engine', 'twinmotion', 'sketchup', 'digital-humanities']
+            },
+            {
+                id: 'house-of-serenos',
+                title: 'House of Serenos',
+                role: 'Programmer',
+                time: 'Feb-Mar 2026',
+                context: 'HKU · [Arts Tech Lab Internship](item:atl)',
+                relatedWork: 'atl',
+                description: [
+                    'Improved the VR demo for public exhibition, fixing interaction issues, and providing on-site support.',
+                    'Implemented a new teleportation system and improved the user interface for better accessibility.'
+                ],
+                link: 'https://www.atlab.hku.hk/house-of-sereno/',
+                thumbnail: 'images/serenos-thumb.png',
+                tags: ['unity', 'c#', 'vr', 'technical-support']
             }
         ],
         games: [
@@ -173,17 +188,32 @@
             {
                 id: 'pinball-foddian',
                 title: 'Pinball Foddian (Work-in-Progress, click here to play demo)',
-                role: 'Creator',
+                role: 'Solo Developer',
                 time: 'Mar 2026–Current',
                 context: 'Solo Project',
                 description: [
-                    'Creating a platformer game with only 1 button input, where the player must navigate through levels by controlling a bouncing ball.',
+                    'Designed and developed a platformer game centered around a single-button control scheme, where players navigate levels by manipulating a bouncing ball.',
                     'Incorporated Foddian game mechanics to intentionally frustrate the player and create a unique challenge.',
                     'Playable demo available by clicking the link above.'
                 ],
                 link: 'games/pinball-foddian/index.html',
                 thumbnail: 'images/pinball-thumb.png',
                 tags: ['unity', 'c#', 'game-design', 'platformer']
+            },
+            {
+                id: 'siege-command-simulator',
+                title: 'Siege Command Simulator (CAVE)',
+                role: 'Creator',
+                time: 'Jul 2026',
+                context: 'HKU · [Visioneers Internship](item:his-intern)',
+                relatedWork: 'his-intern',
+                description: [
+                    'Developed a strategy game prototype for a CAVE environment, where players command units in a siege scenario.',
+                    'Implemented AI for enemy units, physical-dodging mechanics in CAVE, and cross-CAVE multiplayer.'
+                ],
+                link: '',
+                thumbnail: 'images/siege-thumb.png',
+                tags: ['unity', 'c#', 'game-design', 'xr', 'cave']
             }
         ]
     };
@@ -194,9 +224,37 @@
     const games = portfolioData.games;
 
     const map = {};
-    (workItems || []).forEach(p => (map[p.id] = p));
-    (projects || []).forEach(p => (map[p.id] = p));
-    (games || []).forEach(g => (map[g.id] = g));
+    const pageById = {};
+    (workItems || []).forEach(p => {
+        map[p.id] = p;
+        pageById[p.id] = 'index.html';
+    });
+    (projects || []).forEach(p => {
+        map[p.id] = p;
+        pageById[p.id] = 'projects.html';
+    });
+    (games || []).forEach(g => {
+        map[g.id] = g;
+        pageById[g.id] = 'games.html';
+    });
+
+    const HIGHLIGHT_MS = 1400;
+
+    function pageForId(id) {
+        return pageById[id] || 'index.html';
+    }
+
+    function hrefForItem(id) {
+        return pageForId(id) + '#' + encodeURIComponent(id);
+    }
+
+    function resolveHref(href) {
+        const raw = String(href || '').trim();
+        if (raw.indexOf('item:') === 0) {
+            return hrefForItem(raw.slice(5));
+        }
+        return raw;
+    }
 
     function appendDescriptionWithLinks(parent, text) {
         const source = String(text || '');
@@ -210,14 +268,19 @@
             }
 
             const linkLabel = match[1];
-            const linkHref = match[2];
+            const resolvedHref = resolveHref(match[2]);
             const anchor = document.createElement('a');
-            anchor.href = linkHref;
-            anchor.target = '_blank';
-            anchor.rel = 'noopener noreferrer';
+            anchor.href = resolvedHref;
             anchor.textContent = linkLabel;
-            parent.appendChild(anchor);
 
+            if (match[2].indexOf('item:') === 0 || resolvedHref.charAt(0) === '#') {
+                anchor.className = 'portfolio-crosslink';
+            } else {
+                anchor.target = '_blank';
+                anchor.rel = 'noopener noreferrer';
+            }
+
+            parent.appendChild(anchor);
             cursor = match.index + match[0].length;
         }
 
@@ -226,9 +289,58 @@
         }
     }
 
+    function appendMetaLine(parent, timeText, contextText) {
+        const meta = document.createElement('p');
+        meta.className = 'project-meta';
+
+        if (timeText) {
+            meta.appendChild(document.createTextNode(timeText));
+        }
+        if (timeText && contextText) {
+            meta.appendChild(document.createTextNode(' · '));
+        }
+        if (contextText) {
+            appendDescriptionWithLinks(meta, contextText);
+        }
+
+        if (meta.childNodes.length) {
+            parent.appendChild(meta);
+        }
+        return meta;
+    }
+
+    function highlightItem(el) {
+        if (!el) return;
+        el.classList.remove('portfolio-flash');
+        // Force reflow so re-triggering the animation works
+        void el.offsetWidth;
+        el.classList.add('portfolio-flash');
+        window.setTimeout(() => el.classList.remove('portfolio-flash'), HIGHLIGHT_MS);
+    }
+
+    function focusHashTarget(options) {
+        const opts = options || {};
+        const rawHash = (window.location.hash || '').replace(/^#/, '');
+        if (!rawHash) return false;
+
+        const id = decodeURIComponent(rawHash);
+        const el = document.getElementById(id);
+        if (!el) return false;
+
+        const headerOffset = parseInt(
+            getComputedStyle(document.documentElement).getPropertyValue('--header-offset'),
+            10
+        ) || 92;
+        const top = el.getBoundingClientRect().top + window.scrollY - headerOffset - 8;
+        window.scrollTo({ top: Math.max(0, top), behavior: opts.instant ? 'auto' : 'smooth' });
+        highlightItem(el);
+        return true;
+    }
+
     function renderProject(item) {
         const el = document.createElement('div');
         el.className = 'project';
+        if (item.id) el.id = item.id;
 
         const img = document.createElement('img');
         img.className = 'project-thumb';
@@ -241,14 +353,14 @@
         title.className = 'project-title';
         const a = document.createElement('a');
         a.href = item.link || '#';
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
+        if (item.link) {
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+        }
         a.textContent = item.title + (item.role ? ' – ' + item.role : '');
         title.appendChild(a);
 
-        const meta = document.createElement('p');
-        meta.className = 'project-meta';
-        meta.textContent = (item.time ? item.time + ' · ' : '') + (item.context || '');
+        appendMetaLine(content, item.time, item.context);
 
         const ul = document.createElement('ul');
         if (Array.isArray(item.description)) {
@@ -267,8 +379,7 @@
         tech.className = 'project-tech';
         tech.textContent = (item.tags || []).join(' · ');
 
-        content.appendChild(title);
-        content.appendChild(meta);
+        content.insertBefore(title, content.firstChild);
         if (ul.children.length) content.appendChild(ul);
         content.appendChild(tech);
 
@@ -280,6 +391,7 @@
     function renderWorkExperience(item) {
         const el = document.createElement('div');
         el.className = 'project';
+        if (item.id) el.id = item.id;
 
         const img = document.createElement('img');
         img.className = 'project-thumb';
@@ -292,8 +404,10 @@
         title.className = 'project-title';
         const a = document.createElement('a');
         a.href = item.link || '#';
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
+        if (item.link) {
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+        }
         a.textContent = item.role || item.title || '';
         title.appendChild(a);
 
@@ -301,9 +415,9 @@
         company.className = 'project-meta';
         company.textContent = item.title || '';
 
-        const meta = document.createElement('p');
-        meta.className = 'project-meta';
-        meta.textContent = [item.time, item.context].filter(Boolean).join(' · ');
+        content.appendChild(title);
+        content.appendChild(company);
+        appendMetaLine(content, item.time, item.context);
 
         const ul = document.createElement('ul');
         if (Array.isArray(item.description)) {
@@ -322,9 +436,6 @@
         tech.className = 'project-tech';
         tech.textContent = (item.tags || []).join(' · ');
 
-        content.appendChild(title);
-        content.appendChild(company);
-        if (meta.textContent) content.appendChild(meta);
         if (ul.children.length) content.appendChild(ul);
         if (tech.textContent) content.appendChild(tech);
 
@@ -439,7 +550,15 @@
         const listWrap = document.createElement('div');
         container.appendChild(listWrap);
 
-        function update() {
+        let isFirstRender = true;
+
+        function update(options) {
+            const opts = options || {};
+            const hashId = decodeURIComponent((window.location.hash || '').replace(/^#/, ''));
+            if (opts.focusHash && hashId && items.some(it => it.id === hashId) && search.value) {
+                search.value = '';
+            }
+
             const q = (search.value || '').trim().toLowerCase();
             const sortValue = sort.value;
             listWrap.innerHTML = '';
@@ -449,11 +568,17 @@
                 return hay.indexOf(q) !== -1;
             }).slice().sort((a, b) => compareProjects(a, b, sortValue));
             filtered.forEach(it => listWrap.appendChild(renderProject(it)));
+
+            if (opts.focusHash || isFirstRender) {
+                isFirstRender = false;
+                window.requestAnimationFrame(() => focusHashTarget({ instant: false }));
+            }
         }
 
-        search.addEventListener('input', update);
-        sort.addEventListener('change', update);
-        update();
+        search.addEventListener('input', () => update());
+        sort.addEventListener('change', () => update());
+        window.addEventListener('hashchange', () => update({ focusHash: true }));
+        update({ focusHash: true });
     }
 
     // Full pages
@@ -462,6 +587,12 @@
     }
     if (document.getElementById('games-list')) {
         createListWithSearch(games || [], 'games-list');
+    }
+
+    // CV page — focus after render (list pages handle this in createListWithSearch)
+    if (!document.getElementById('projects-list') && !document.getElementById('games-list')) {
+        window.requestAnimationFrame(() => focusHashTarget({ instant: false }));
+        window.addEventListener('hashchange', () => focusHashTarget({ instant: false }));
     }
 
 })();

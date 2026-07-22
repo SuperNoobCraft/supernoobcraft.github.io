@@ -385,6 +385,10 @@ em {
 .project {
     display: flex;
     margin-bottom: 10px;
+    padding: 6px 8px;
+    margin-left: -8px;
+    margin-right: -8px;
+    scroll-margin-top: calc(var(--header-offset) + 8px);
 }
 .project-thumb {
     width: 58px;
@@ -411,6 +415,30 @@ em {
     font-size: 0.8rem;
     font-family: "JetBrains Mono", "Inter", monospace;
     color: var(--text-secondary);
+}
+.portfolio-crosslink {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+}
+.portfolio-crosslink:hover {
+    text-decoration-thickness: 2px;
+}
+.project.portfolio-flash {
+    border-radius: 8px;
+    animation: portfolio-flash 1.25s ease;
+}
+@keyframes portfolio-flash {
+    0%,
+    35% {
+        background: color-mix(in srgb, var(--accent) 16%, transparent);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent);
+    }
+    100% {
+        background: transparent;
+        box-shadow: 0 0 0 0 transparent;
+    }
 }
 .portfolio-controls {
     display: flex;
